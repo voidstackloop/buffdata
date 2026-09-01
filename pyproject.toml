@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "buffdata"
+version = "0.1.0"
+description = "AI Training Data Optimizer powered by Google Gemini API"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "BuffData Team" }
+]
+dependencies = [
+    "google-genai>=1.0.0",
+    "pydantic>=2.5.0",
+    "typer[all]>=0.12.0",
+    "rich>=13.7.0",
+    "aiofiles>=23.2.0",
+    "pyarrow>=14.0.0",
+    "pandas>=2.1.0",
+    "pyyaml>=6.0.1",
+    "tenacity>=8.2.3",
+    "numpy>=1.24.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-mock>=3.12.0",
+]
+
+[project.scripts]
+buffdata = "buffdata.cli.main:app"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["buffdata*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

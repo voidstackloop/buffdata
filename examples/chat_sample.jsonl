@@ -1,0 +1,2 @@
+{"messages": [{"role": "user", "content": "How do transformers differ from RNNs in NLP?"}, {"role": "assistant", "content": "Transformers process tokens in parallel using self-attention mechanisms, while RNNs process sequences sequentially with recurrent hidden states."}]}
+{"messages": [{"role": "user", "content": "Give me 3 tips for writing cleaner code."}, {"role": "assistant", "content": "1. Use meaningful variable names.\n2. Keep functions short and single-purpose.\n3. Write comprehensive unit tests."}]}

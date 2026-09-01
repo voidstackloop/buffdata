@@ -1,0 +1,22 @@
+model: "gemini-3.7-flash"
+fast_model: "gemini-3.5-flash-lite"
+embedding_model: "text-embedding-004"
+concurrency: 10
+max_rpm: 60
+
+# Filter threshold
+filter_min_score: 7.5
+
+# Refinement mode: all (prompt & response), response_only, prompt_only
+refine_mode: "all"
+
+# Evolution strategies
+evolution_strategies:
+  - "deepen_reasoning"
+  - "add_constraints"
+  - "concretize"
+evolution_depth: 1
+
+# Deduplication
+dedup_threshold: 0.85
+dedup_method: "minhash"

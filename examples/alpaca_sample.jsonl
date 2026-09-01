@@ -1,0 +1,5 @@
+{"instruction": "Write a python function to check if a number is prime.", "input": "", "output": "Certainly! Here is a function for you:\n\ndef is_prime(n):\n    if n <= 1:\n        return False\n    for i in range(2, int(n**0.5) + 1):\n        if n % i == 0:\n            return False\n    return True\n\nI hope this helps! As an AI language model, let me know if you need more."}
+{"instruction": "Explain quantum superposition.", "input": "", "output": "Superposition means a quantum system can be in multiple states at once until measured."}
+{"instruction": "Calculate 15% tip on 48 dollars.", "input": "", "output": "Sure! 15% of 48 is 7.20 dollars. Total bill is 55.20."}
+{"instruction": "Fix the bug in this code", "input": "def add(a, b): return a - b", "output": "The bug is that it uses minus instead of plus. Change return a - b to return a + b."}
+{"instruction": "Write a regex to match valid email addresses.", "input": "", "output": "Here is the regex: ^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$"}
