@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Union
 from buffdata.models.schemas import DatasetItem
+from buffdata.security.permissions import restrict_to_owner
 
 
 class CheckpointManager:
@@ -36,6 +37,7 @@ class CheckpointManager:
         data["_buffdata_id"] = str(item.id)
         with open(self.path, "a", encoding="utf-8") as f:
             f.write(json.dumps(data, ensure_ascii=False) + "\n")
+        restrict_to_owner(self.path)
         self.processed_ids.add(str(item.id))
 
     def load_all(self) -> List[DatasetItem]:

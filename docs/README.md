@@ -21,6 +21,7 @@ Written for three readers:
 | [architecture.md](architecture.md) | The 7-stage pipeline, the provider-neutral client contract, data flow, where each guarantee (strict/local network policy, accuracy contracts) actually lives in the code |
 | [cli-reference.md](cli-reference.md) | Every command, grouped by what it's for, with real examples |
 | [configuration.md](configuration.md) | Every `PipelineConfig` field: type, default, what it controls, and the YAML equivalent |
+| [security.md](security.md) | API keys in the OS keyring instead of a plaintext file (`buffdata auth`), and owner-only file permissions on checkpoints/reports/the audit DB |
 | [providers.md](providers.md) | Cloud providers, local LLM servers (Ollama/LM Studio/vLLM/llama.cpp), secret backends (Vault/AWS/GCP/Azure), cloud dataset storage (S3/GCS/ADLS) |
 | [governance.md](governance.md) | Access policy (RBAC), OIDC/SSO bearer-token verification, the durable audit log, Data Contracts, SBOM generation |
 | [observability.md](observability.md) | OpenTelemetry tracing and Prometheus metrics per pipeline run |

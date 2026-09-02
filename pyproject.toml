@@ -12,14 +12,35 @@ license = { text = "MIT" }
 authors = [
     { name = "BuffData Team" }
 ]
+keywords = [
+    "llm", "ai", "dataset", "training-data", "data-quality", "data-cleaning",
+    "deduplication", "pii-redaction", "fine-tuning", "gemini", "openai", "anthropic",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Text Processing :: Linguistic",
+]
 dependencies = [
     "google-genai>=1.0.0",
     "openai>=3.6.0",
     "anthropic>=1.2.0",
     "pydantic>=2.5.0",
-    "typer[all]>=0.12.0",
+    "typer>=0.12.0",
     "rich>=13.7.0",
-    "aiofiles>=23.2.0",
+    "orjson>=3.9.0",
+    "xxhash>=3.4.0",
     "pyarrow>=14.0.0",
     "pandas>=2.1.0",
     "polars>=1.0.0",
@@ -37,6 +58,7 @@ dependencies = [
     "torch>=2.0.0",
     "transformers>=4.35.0",
     "sentence-transformers>=2.2.2",
+    "keyring>=25.0.0",
 ]
 
 [project.optional-dependencies]
@@ -66,6 +88,12 @@ observability = [
     "opentelemetry-exporter-otlp>=1.24.0",
     "prometheus-client>=0.20.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/voidstackloop/buffdata"
+Repository = "https://github.com/voidstackloop/buffdata"
+Issues = "https://github.com/voidstackloop/buffdata/issues"
+Documentation = "https://github.com/voidstackloop/buffdata/tree/master/docs"
 
 [project.scripts]
 buffdata = "buffdata.cli.main:app"

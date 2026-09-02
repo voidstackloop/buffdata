@@ -1,4 +1,5 @@
 import asyncio
+import os
 from pathlib import Path
 from typing import List, Optional
 import typer
@@ -1238,3 +1239,102 @@ def sbom_cmd(
     console.print(
         f"[bold green]Wrote SBOM[/bold green] ({len(sbom['components'])} components) to {output}"
     )
+
+
+auth_app = typer.Typer(
+    help="Store or remove provider API keys in the OS-native credential store (Windows "
+    "Credential Manager / macOS Keychain / Linux Secret Service), instead of a plaintext "
+    "file or a shell history entry."
+)
+app.add_typer(auth_app, name="auth")
+
+# Not exhaustive -- any name works, since the OS keyring just stores whatever key you give
+# it -- but this is every secret name a stock BuffData install actually looks for, so
+# `buffdata auth status` has something concrete to check.
+_KNOWN_SECRET_NAMES = [
+    "GEMINI_API_KEY", "GOOGLE_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY",
+    "AZURE_OPENAI_API_KEY", "OPENAI_COMPATIBLE_API_KEY",
+    "OLLAMA_API_KEY", "LMSTUDIO_API_KEY", "VLLM_API_KEY", "LLAMACPP_API_KEY",
+]
+
+
+def _keyring_service_name() -> str:
+    return os.getenv("BUFFDATA_KEYRING_SERVICE", "buffdata")
+
+
+@auth_app.command("set")
+def auth_set_cmd(
+    key_name: str = typer.Argument(
+        ...,
+        help=f"Secret name to store, e.g. one of: {', '.join(_KNOWN_SECRET_NAMES)}",
+    ),
+):
+    """Store a provider API key in the OS keyring -- prompted with hidden input, never
+    echoed to the terminal, never written to any file or shell history. Every buffdata
+    command that needs it picks it up automatically afterward with no other
+    configuration: the default secret backend checks the OS keyring whenever the
+    matching environment variable isn't already set (see buffdata/engine/secrets.py).
+    """
+    try:
+        import keyring
+    except ImportError:
+        console.print("[bold red]Install keyring (pip install keyring) to use `buffdata auth`.[/bold red]")
+        raise typer.Exit(1)
+
+    value = typer.prompt(f"Value for {key_name}", hide_input=True, confirmation_prompt=True)
+    if not value:
+        console.print("[yellow]Empty value -- nothing stored.[/yellow]")
+        raise typer.Exit(1)
+    try:
+        keyring.set_password(_keyring_service_name(), key_name, value)
+    except Exception as exc:
+        console.print(f"[bold red]Could not store {key_name} in the OS keyring: {exc}[/bold red]")
+        raise typer.Exit(1)
+    console.print(
+        f"[bold green]Stored {key_name} in the OS keyring.[/bold green] No .env file or "
+        "BUFFDATA_SECRET_BACKEND change needed -- it's used automatically from here on."
+    )
+
+
+@auth_app.command("remove")
+def auth_remove_cmd(
+    key_name: str = typer.Argument(..., help="Secret name to remove, as previously passed to `buffdata auth set`"),
+):
+    """Remove a key previously stored via `buffdata auth set`."""
+    try:
+        import keyring
+        from keyring.errors import PasswordDeleteError
+    except ImportError:
+        console.print("[bold red]Install keyring (pip install keyring) to use `buffdata auth`.[/bold red]")
+        raise typer.Exit(1)
+
+    try:
+        keyring.delete_password(_keyring_service_name(), key_name)
+        console.print(f"[bold green]Removed {key_name} from the OS keyring.[/bold green]")
+    except PasswordDeleteError:
+        console.print(f"[yellow]{key_name} was not set in the OS keyring.[/yellow]")
+
+
+@auth_app.command("status")
+def auth_status_cmd():
+    """Show which known provider secrets currently resolve, and from where (environment
+    variable vs. OS keyring) -- the values themselves are never displayed, here or
+    anywhere else in buffdata.
+    """
+    table = Table(title="Secret resolution status", border_style="cyan")
+    table.add_column("Name", style="bold")
+    table.add_column("Resolves from")
+    for name in _KNOWN_SECRET_NAMES:
+        if os.getenv(name):
+            source = "[green]environment[/green]"
+        else:
+            found = None
+            try:
+                import keyring
+
+                found = keyring.get_password(_keyring_service_name(), name)
+            except Exception:
+                pass
+            source = "[cyan]OS keyring[/cyan]" if found else "[dim]not set[/dim]"
+        table.add_row(name, source)
+    console.print(table)

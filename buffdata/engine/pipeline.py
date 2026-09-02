@@ -16,6 +16,7 @@ from buffdata.engine.profiler import DatasetProfiler, representative_sample
 from buffdata.engine.validator import DatasetValidator
 from buffdata.models.formats import read_dataset, write_dataset_atomic
 from buffdata.observability import ObservabilityRegistry, disabled_registry
+from buffdata.security.permissions import restrict_to_owner
 from buffdata.models.schemas import (
     ClassificationMode,
     DatasetItem,
@@ -83,6 +84,10 @@ class OptimizationPipeline:
         path.parent.mkdir(parents=True, exist_ok=True)
         temporary = path.with_name(f".{path.name}.tmp")
         temporary.write_bytes(orjson.dumps(data, option=orjson.OPT_INDENT_2))
+        # Owner-only permissions before the rename, not after: os.replace preserves the
+        # source inode's mode on POSIX, so this is the only chmod needed, and it means
+        # the file is never briefly world-readable at its final path.
+        restrict_to_owner(temporary)
         os.replace(temporary, path)
 
     async def _save_checkpoint(

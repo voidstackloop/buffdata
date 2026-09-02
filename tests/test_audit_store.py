@@ -1,4 +1,7 @@
 import json
+import os
+import stat
+import sys
 
 import pytest
 import yaml
@@ -242,3 +245,12 @@ def test_cli_audit_usage_report_with_pricing(tmp_path):
     ])
     assert result.exit_code == 0, result.output
     assert "$0.50" in result.output
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="chmod doesn't express owner-only ACLs on Windows")
+def test_audit_db_file_is_created_with_owner_only_permissions(tmp_path):
+    db_path = tmp_path / "audit.db"
+    SQLiteAuditStore(db_path)
+
+    mode = stat.S_IMODE(os.stat(db_path).st_mode)
+    assert mode == 0o600

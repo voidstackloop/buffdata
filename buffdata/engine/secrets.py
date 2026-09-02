@@ -3,10 +3,12 @@
 Every LLM client in engine/client.py resolves its API key through whatever
 SecretResolver is configured, instead of calling os.getenv directly. The
 default (EnvSecretResolver) makes this a no-op for every existing setup --
-nothing changes until BUFFDATA_SECRET_BACKEND is set to something else. This
-exists so an enterprise deployment can point BuffData at Vault, AWS Secrets
-Manager, GCP Secret Manager, or Azure Key Vault without any code changes above
-this layer -- only environment configuration.
+nothing changes until BUFFDATA_SECRET_BACKEND is set to something else, except
+that it now also checks the OS keyring (see KeyringSecretResolver) when an
+environment variable isn't set, so a value stored with `buffdata auth set`
+just works. Beyond the default, an enterprise deployment can point BuffData at
+Vault, AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault without any
+code changes above this layer -- only environment configuration.
 """
 
 from __future__ import annotations
@@ -21,14 +23,54 @@ class SecretResolver(Protocol):
     def get(self, key: str) -> Optional[str]: ...
 
 
-class EnvSecretResolver:
-    """Default resolver: environment variables (including .env, already loaded via
-    engine/client.py's load_dotenv()). Matches BuffData's behavior before any secret-backend
-    integration existed -- this is what every client fell back to already.
+class KeyringSecretResolver:
+    """Reads secrets from the OS-native credential store -- Windows Credential Manager,
+    macOS Keychain, or Linux Secret Service/KWallet -- via the `keyring` package. The one
+    backend that needs no server, no cloud account, and no infrastructure to already exist
+    to be useful: exactly the gap for a `pip install`ed CLI running on someone's own
+    machine, where Vault/AWS/GCP/Azure secret managers all assume infrastructure that
+    plainly isn't there. Populated with `buffdata auth set <NAME>`, which prompts for the
+    value with hidden input and never writes it to any file.
     """
 
+    SERVICE_NAME = "buffdata"
+
+    def __init__(self, service_name: Optional[str] = None):
+        self.service_name = service_name or os.getenv("BUFFDATA_KEYRING_SERVICE", self.SERVICE_NAME)
+
     def get(self, key: str) -> Optional[str]:
-        return os.getenv(key)
+        try:
+            import keyring
+        except ImportError:
+            return None
+        try:
+            return keyring.get_password(self.service_name, key)
+        except Exception:
+            # A missing/misconfigured OS backend (headless Linux with no Secret Service,
+            # a locked keychain, ...) must degrade to "not found" for this one lookup, not
+            # crash every secret resolution on a machine that simply has none configured.
+            return None
+
+
+class EnvSecretResolver:
+    """Default resolver: environment variables (including .env, already loaded via
+    engine/client.py's load_dotenv()), falling back to the OS keyring
+    (KeyringSecretResolver) for any key not found in the environment. This is the only
+    resolver that falls back to anything -- every other backend below is explicit and
+    deliberately does not -- because the fallback exists specifically to make the
+    unconfigured default case work with zero setup: `buffdata auth set GEMINI_API_KEY`
+    followed immediately by any command that needs it, no BUFFDATA_SECRET_BACKEND change
+    required. An environment variable, when set, always wins over the keyring.
+    """
+
+    def __init__(self):
+        self._keyring = KeyringSecretResolver()
+
+    def get(self, key: str) -> Optional[str]:
+        value = os.getenv(key)
+        if value:
+            return value
+        return self._keyring.get(key)
 
 
 class VaultSecretResolver:
@@ -178,6 +220,7 @@ class AzureKeyVaultResolver:
 
 _RESOLVERS = {
     "env": EnvSecretResolver,
+    "keyring": KeyringSecretResolver,
     "vault": VaultSecretResolver,
     "aws_secrets_manager": AWSSecretsManagerResolver,
     "gcp_secret_manager": GCPSecretManagerResolver,

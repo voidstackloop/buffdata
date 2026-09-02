@@ -249,6 +249,8 @@ contract. BuffData never sends a failed request to a different provider automati
 - Local LLM servers (Ollama, LM Studio, vLLM, llama.cpp) or any other OpenAI-compatible
   endpoint, on this machine or another one on your network -- with an optional
   structural guarantee (`--network-policy local`) that calls can never leave it.
+- API keys stored in your OS's native credential store (`buffdata auth set`), not a
+  plaintext `.env` file -- see [docs/security.md](docs/security.md).
 - Local PII redaction before any dataset content reaches a provider.
 - Schema-preserving JSON/JSONL/NDJSON, CSV/TSV, Parquet, Arrow/Feather/IPC,
   YAML, plain-text, and Hugging Face on-disk dataset processing.

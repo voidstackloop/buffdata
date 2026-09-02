@@ -30,6 +30,8 @@ from typing import Any, Optional, Protocol, Union
 
 from pydantic import BaseModel, Field
 
+from buffdata.security.permissions import restrict_to_owner
+
 
 class AuditRecord(BaseModel):
     run_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -78,6 +80,7 @@ class SQLiteAuditStore:
     def __init__(self, db_path: Union[str, Path] = "buffdata_audit.db"):
         self.db_path = Path(db_path)
         self._init_schema()
+        restrict_to_owner(self.db_path)
 
     def _connect(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.db_path)

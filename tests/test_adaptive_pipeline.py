@@ -1,4 +1,7 @@
 import json
+import os
+import stat
+import sys
 
 import pytest
 
@@ -211,3 +214,20 @@ def test_identifier_policy_uses_high_precision_phone_fallback():
     assert "900/1800/1900 MHz" in redacted
     assert "+1 (555) 123-4567" not in redacted
     assert "<PHONE_NUMBER>" in redacted
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(sys.platform == "win32", reason="chmod doesn't express owner-only ACLs on Windows")
+async def test_report_json_is_written_with_owner_only_permissions(tmp_path):
+    source = tmp_path / "input.jsonl"
+    output = tmp_path / "optimized.jsonl"
+    source.write_text(json.dumps({"text": "a record", "source": "fixture"}) + "\n", encoding="utf-8")
+    client = PipelineFakeClient()
+    config = PipelineConfig(provider="anthropic", model="fake-balanced", dedup_method="exact", scrub_pii=False)
+
+    await OptimizationPipeline(config, client=client).run_file(source, output)
+
+    report_path = tmp_path / "optimized.report.json"
+    assert report_path.exists()
+    mode = stat.S_IMODE(os.stat(report_path).st_mode)
+    assert mode == 0o600
