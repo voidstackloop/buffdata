@@ -1,0 +1,1512 @@
+{
+  "method": {
+    "train_rows": 12000,
+    "test_rows": 2000,
+    "epochs": 6,
+    "seeds": [
+      17,
+      29,
+      43
+    ],
+    "model": "EmbeddingBag(mean, 64) + Linear",
+    "device": "cpu",
+    "dirty_recipe": {
+      "conflicting_duplicates": 0.4,
+      "class_skew_duplicates": 0.4,
+      "empty_rows": 0.1
+    },
+    "gemini_audit_rows": 20,
+    "gemini_model": "gemini-3.5-flash-lite"
+  },
+  "datasets": {
+    "dbpedia_14": {
+      "hf_id": "fancyzhx/dbpedia_14",
+      "description": "DBpedia ontology classification",
+      "conditions": {
+        "clean_raw": {
+          "rows": 12000,
+          "quality": {
+            "input_rows": 12000
+          },
+          "runs": [
+            {
+              "accuracy": 0.967,
+              "macro_f1": 0.9670674035551599,
+              "train_seconds": 4.026795351997862
+            },
+            {
+              "accuracy": 0.9655,
+              "macro_f1": 0.9655427769090396,
+              "train_seconds": 4.130130997000379
+            },
+            {
+              "accuracy": 0.968,
+              "macro_f1": 0.9680512723961351,
+              "train_seconds": 4.124059768000734
+            }
+          ],
+          "summary": {
+            "accuracy_mean": 0.9668333333333333,
+            "accuracy_std": 0.0012583057392117633,
+            "macro_f1_mean": 0.9668871509534448,
+            "macro_f1_std": 0.001263924702074232,
+            "train_seconds_mean": 4.093662038999658,
+            "train_seconds_std": 0.05798776015969814
+          }
+        },
+        "clean_optimized": {
+          "rows": 12000,
+          "quality": {
+            "input_rows": 12000,
+            "output_rows": 12000,
+            "rejected_rows": 0,
+            "profile": {
+              "format": "raw",
+              "row_count": 12000,
+              "text_fields": [
+                "text"
+              ],
+              "existing_label_field": "label",
+              "classification_applicable": true,
+              "task_type": "multi-class",
+              "classes": [
+                "0",
+                "1",
+                "10",
+                "11",
+                "12",
+                "13",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6",
+                "7",
+                "8",
+                "9"
+              ],
+              "confidence": 1.0,
+              "reasoning": "Derived the classification task from existing labels.",
+              "sampled_ids": [
+                "1f9580a9",
+                "d2638b6b",
+                "f933c4a7",
+                "95757873",
+                "baf5cac0",
+                "1137e9a2",
+                "1db569c8",
+                "9ade9581",
+                "6f591e0f",
+                "46d03480",
+                "93fc78ee",
+                "142440f1",
+                "c4f409b0",
+                "217ac987",
+                "6161a3a6",
+                "b17e391e",
+                "34263c16",
+                "1e181df6",
+                "e708df30",
+                "c8692fe4",
+                "2b730867",
+                "80066a03",
+                "6f380231",
+                "86db11f2",
+                "030c4cb0",
+                "c55f1bcb",
+                "c556aedc",
+                "7a166d8b",
+                "b4117640",
+                "6d6b1b43",
+                "bee49875",
+                "cc9f7051",
+                "51d9a4f0",
+                "2c1d50ef",
+                "49bafb7f",
+                "58c7d12a",
+                "f3b167bd",
+                "b6147467",
+                "0d20e5cd",
+                "bc5eafd2",
+                "5cd4a9c1",
+                "708379d9",
+                "6c00440e",
+                "0cec098a",
+                "ccaa2fd2",
+                "b2f384ae",
+                "ae2ebe4a",
+                "e19b2d69",
+                "a112fe66",
+                "3b293a29",
+                "2a711cfb",
+                "023afb63",
+                "6a30b8c6",
+                "71f3e31b",
+                "d8c59198",
+                "88366823",
+                "bcf1bda2",
+                "2bd37c18",
+                "29a9ffd6",
+                "3ab4026a",
+                "4d14831e",
+                "0f91c78a",
+                "820fd3fc",
+                "f39978bf",
+                "c5b23b61",
+                "8a227d07",
+                "13cc0789",
+                "a45899d2",
+                "b965f9c7",
+                "39eb1e02",
+                "8c53d3d9",
+                "9dea4324",
+                "a452dc4f",
+                "20c5e500",
+                "193c89b3",
+                "acc8c923",
+                "075ead6c",
+                "2de9e4e6",
+                "d0c07c34",
+                "253b0aea",
+                "39880b42",
+                "bb6430a8",
+                "267408d2",
+                "5cacf311",
+                "f5f52c6d",
+                "37b8f588",
+                "fdbcb974",
+                "3842f5a2",
+                "0ff3765c",
+                "987e1414",
+                "64452e72",
+                "5695edbb",
+                "3555b8f4",
+                "e05a32d3",
+                "0cee60e7",
+                "65bf03ca",
+                "645a478f",
+                "5e7375cf",
+                "76f40887",
+                "34a71d39"
+              ]
+            },
+            "stages": {
+              "validate": {
+                "accepted": 12000,
+                "rejected": 0
+              },
+              "pii": {
+                "enabled": false,
+                "redacted_records": 0
+              },
+              "profile": {
+                "classification_applicable": true,
+                "confidence": 1.0,
+                "task_type": "multi-class"
+              },
+              "dedup": {
+                "method": "exact",
+                "rejected": 0
+              },
+              "score_refine": {
+                "mode": "off",
+                "scored": 0,
+                "refined": 0
+              },
+              "filter": {
+                "action": "skipped",
+                "reason": "quality_mode=off does not produce per-row scores",
+                "accepted": 12000,
+                "rejected": 0
+              },
+              "classify": {
+                "action": "existing_labels",
+                "task_type": null,
+                "classes": [
+                  "0",
+                  "1",
+                  "10",
+                  "11",
+                  "12",
+                  "13",
+                  "2",
+                  "3",
+                  "4",
+                  "5",
+                  "6",
+                  "7",
+                  "8",
+                  "9"
+                ],
+                "confidence": 1.0
+              }
+            },
+            "provider": "gemini",
+            "model": "gemini-3.5-flash-lite",
+            "usage": {
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "total_tokens": 0
+            }
+          },
+          "runs": [
+            {
+              "accuracy": 0.967,
+              "macro_f1": 0.9670674035551599,
+              "train_seconds": 4.31019389499852
+            },
+            {
+              "accuracy": 0.9655,
+              "macro_f1": 0.9655427769090396,
+              "train_seconds": 4.4511024489984266
+            },
+            {
+              "accuracy": 0.968,
+              "macro_f1": 0.9680512723961351,
+              "train_seconds": 4.492040692999581
+            }
+          ],
+          "summary": {
+            "accuracy_mean": 0.9668333333333333,
+            "accuracy_std": 0.0012583057392117633,
+            "macro_f1_mean": 0.9668871509534448,
+            "macro_f1_std": 0.001263924702074232,
+            "train_seconds_mean": 4.417779012332176,
+            "train_seconds_std": 0.09539341203273366
+          }
+        },
+        "dirty_raw": {
+          "rows": 22800,
+          "quality": {
+            "input_rows": 22800,
+            "conflicting_duplicate_rows": 4800,
+            "class_skew_duplicate_rows": 4800,
+            "empty_rows": 1200
+          },
+          "runs": [
+            {
+              "accuracy": 0.8915,
+              "macro_f1": 0.8915336912505093,
+              "train_seconds": 8.435431893998611
+            },
+            {
+              "accuracy": 0.883,
+              "macro_f1": 0.882921448418166,
+              "train_seconds": 8.500295903002552
+            },
+            {
+              "accuracy": 0.8345,
+              "macro_f1": 0.8331806489627903,
+              "train_seconds": 8.327900414999021
+            }
+          ],
+          "summary": {
+            "accuracy_mean": 0.8696666666666667,
+            "accuracy_std": 0.030750338751521614,
+            "macro_f1_mean": 0.8692119295438219,
+            "macro_f1_std": 0.03149972328263501,
+            "train_seconds_mean": 8.421209404000061,
+            "train_seconds_std": 0.08707330525088051
+          }
+        },
+        "dirty_optimized": {
+          "rows": 12000,
+          "quality": {
+            "input_rows": 22800,
+            "output_rows": 12000,
+            "rejected_rows": 10800,
+            "profile": {
+              "format": "raw",
+              "row_count": 21600,
+              "text_fields": [
+                "text"
+              ],
+              "existing_label_field": "label",
+              "classification_applicable": true,
+              "task_type": "multi-class",
+              "classes": [
+                "0",
+                "1",
+                "10",
+                "11",
+                "12",
+                "13",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6",
+                "7",
+                "8",
+                "9"
+              ],
+              "confidence": 1.0,
+              "reasoning": "Derived the classification task from existing labels.",
+              "sampled_ids": [
+                "20e1953b",
+                "585c07a9",
+                "9eefa734",
+                "e4368a93",
+                "d800c32c",
+                "18f8f0db",
+                "96cf5be8",
+                "647ebf42",
+                "6fc11168",
+                "82c8d933",
+                "cb8b6f81",
+                "8b3a327f",
+                "d51fffa7",
+                "5a4df5de",
+                "1f1631eb",
+                "c95fd1c5",
+                "5c699fdf",
+                "1ce9b5fc",
+                "148dd374",
+                "ca9bee19",
+                "9005b07e",
+                "84b83a87",
+                "4fe538dc",
+                "121ff06c",
+                "15276e94",
+                "bced7cc9",
+                "63f60bcb",
+                "3942006c",
+                "5d7f095d",
+                "5dc3e95a",
+                "0ac4100e",
+                "b5592891",
+                "4a7e48c8",
+                "17efb93f",
+                "4771438b",
+                "e2104910",
+                "8e6cab3e",
+                "4e1d2233",
+                "3a87694d",
+                "a8f3e473",
+                "97615783",
+                "0bf98924",
+                "afd04f21",
+                "88d8db0a",
+                "7d738ec7",
+                "7f6fc520",
+                "13bf71a8",
+                "135a5095",
+                "05eb6f08",
+                "89472e07",
+                "76e2f0d9",
+                "764d0090",
+                "7f3a4eb5",
+                "be926618",
+                "f26802d2",
+                "c527d67c",
+                "c1afdbf1",
+                "7898b664",
+                "556030e6",
+                "bc92e104",
+                "6cdbfe5a",
+                "6068ef25",
+                "86014d2a",
+                "b97a743c",
+                "501ba069",
+                "cb876166",
+                "e4c59cf9",
+                "74b3e777",
+                "e249d0a5",
+                "d4335945",
+                "5b447c96",
+                "887c781f",
+                "74dbc5d6",
+                "d0f94091",
+                "75b348cb",
+                "f31d1ad3",
+                "ddc2591e",
+                "02134b8d",
+                "4ed1fc44",
+                "b1d5f6e7",
+                "900403e6",
+                "74811bcc",
+                "bc458288",
+                "259e74c6",
+                "d03458e0",
+                "e366a673",
+                "15caad3c",
+                "4c43e0c5",
+                "04d95be7",
+                "9822b8a9",
+                "bac3b13e",
+                "4e10904d",
+                "70ac0bea",
+                "75fbf41e",
+                "48313c73",
+                "1a612905",
+                "aae3dc45",
+                "c0639b40",
+                "497448f9",
+                "919eb714"
+              ]
+            },
+            "stages": {
+              "validate": {
+                "accepted": 21600,
+                "rejected": 1200
+              },
+              "pii": {
+                "enabled": false,
+                "redacted_records": 0
+              },
+              "profile": {
+                "classification_applicable": true,
+                "confidence": 1.0,
+                "task_type": "multi-class"
+              },
+              "dedup": {
+                "method": "exact",
+                "rejected": 9600
+              },
+              "score_refine": {
+                "mode": "sampled",
+                "sample_requested": 20,
+                "scored": 20,
+                "failed": 0,
+                "remote_batches": 1,
+                "remote_records": 20,
+                "average_overall_score": 10.0,
+                "minimum_overall_score": 10.0,
+                "refined": 0
+              },
+              "filter": {
+                "action": "skipped",
+                "reason": "quality_mode=sampled does not produce per-row scores",
+                "accepted": 12000,
+                "rejected": 0
+              },
+              "classify": {
+                "action": "existing_labels",
+                "task_type": null,
+                "classes": [
+                  "0",
+                  "1",
+                  "10",
+                  "11",
+                  "12",
+                  "13",
+                  "2",
+                  "3",
+                  "4",
+                  "5",
+                  "6",
+                  "7",
+                  "8",
+                  "9"
+                ],
+                "confidence": 1.0
+              }
+            },
+            "provider": "gemini",
+            "model": "gemini-3.5-flash-lite",
+            "usage": {
+              "input_tokens": 4258,
+              "output_tokens": 2459,
+              "total_tokens": 6717
+            }
+          },
+          "runs": [
+            {
+              "accuracy": 0.967,
+              "macro_f1": 0.9670674035551599,
+              "train_seconds": 4.1758061360014835
+            },
+            {
+              "accuracy": 0.9655,
+              "macro_f1": 0.9655427769090396,
+              "train_seconds": 4.026768305000587
+            },
+            {
+              "accuracy": 0.968,
+              "macro_f1": 0.9680512723961351,
+              "train_seconds": 4.177585049998015
+            }
+          ],
+          "summary": {
+            "accuracy_mean": 0.9668333333333333,
+            "accuracy_std": 0.0012583057392117633,
+            "macro_f1_mean": 0.9668871509534448,
+            "macro_f1_std": 0.001263924702074232,
+            "train_seconds_mean": 4.126719830333362,
+            "train_seconds_std": 0.0865651297926192
+          }
+        }
+      },
+      "dirty_optimized_minus_dirty_raw": {
+        "accuracy": 0.09716666666666662,
+        "macro_f1": 0.09767522140962293
+      }
+    },
+    "yelp_polarity": {
+      "hf_id": "fancyzhx/yelp_polarity",
+      "description": "Yelp review sentiment classification",
+      "conditions": {
+        "clean_raw": {
+          "rows": 12000,
+          "quality": {
+            "input_rows": 12000
+          },
+          "runs": [
+            {
+              "accuracy": 0.9065,
+              "macro_f1": 0.9064971715394391,
+              "train_seconds": 6.191426269000658
+            },
+            {
+              "accuracy": 0.908,
+              "macro_f1": 0.9079844493719439,
+              "train_seconds": 6.049831227999675
+            },
+            {
+              "accuracy": 0.9035,
+              "macro_f1": 0.9034912900889305,
+              "train_seconds": 6.039802551000321
+            }
+          ],
+          "summary": {
+            "accuracy_mean": 0.906,
+            "accuracy_std": 0.0022912878474779463,
+            "macro_f1_mean": 0.9059909703334378,
+            "macro_f1_std": 0.0022889516882953786,
+            "train_seconds_mean": 6.093686682666885,
+            "train_seconds_std": 0.08479335848468436
+          }
+        },
+        "clean_optimized": {
+          "rows": 12000,
+          "quality": {
+            "input_rows": 12000,
+            "output_rows": 12000,
+            "rejected_rows": 0,
+            "profile": {
+              "format": "raw",
+              "row_count": 12000,
+              "text_fields": [
+                "text"
+              ],
+              "existing_label_field": "label",
+              "classification_applicable": true,
+              "task_type": "binary",
+              "classes": [
+                "0",
+                "1"
+              ],
+              "confidence": 1.0,
+              "reasoning": "Derived the classification task from existing labels.",
+              "sampled_ids": [
+                "4faf9d12",
+                "8ee36d6c",
+                "705bb2ea",
+                "b868b400",
+                "1a357c3f",
+                "931bde42",
+                "955637fd",
+                "46c2ec7e",
+                "cc22c2e6",
+                "43bab187",
+                "94c6b2de",
+                "12bd2c5b",
+                "a671a0f1",
+                "1492e415",
+                "3a57536d",
+                "b32c4b63",
+                "59f8b7ef",
+                "7e2625fb",
+                "4dea8866",
+                "eda31b8f",
+                "f9301b75",
+                "fb5f5ab6",
+                "a1799d14",
+                "73065f6a",
+                "910e2c78",
+                "9edf070a",
+                "8231a13a",
+                "542b80e5",
+                "ffbc7aa4",
+                "9e55e411",
+                "0b2760c0",
+                "06e400e4",
+                "c3e0a29e",
+                "ac1d0e21",
+                "2eb0f1a1",
+                "909d0770",
+                "a71ed112",
+                "75f83be3",
+                "3572fa0b",
+                "669d2705",
+                "4ea80c48",
+                "edc16f6d",
+                "d5fb3675",
+                "0a8d14b1",
+                "88a9af43",
+                "8c1aacde",
+                "cca2d488",
+                "ddc88a14",
+                "bba500d8",
+                "e1900732",
+                "96c5af01",
+                "4cf96f3d",
+                "6dfdd39c",
+                "33d0150b",
+                "387cd1ca",
+                "bd668c4f",
+                "36241322",
+                "71f5da20",
+                "8a9263ae",
+                "155ac0d7",
+                "fe79270b",
+                "02f55bc1",
+                "8f807c1e",
+                "bdb24e31",
+                "6a9bb255",
+                "f70cfcef",
+                "dbf95963",
+                "56e3dc56",
+                "d830ecb8",
+                "57991f03",
+                "c30c3b64",
+                "a70b4d51",
+                "e41129ce",
+                "02761270",
+                "1c1d9d64",
+                "272cfc56",
+                "68e2ef67",
+                "05fb49d8",
+                "25ca3187",
+                "404bacd8",
+                "1e01c834",
+                "abe9275d",
+                "3814d49d",
+                "f2d6c6c2",
+                "6e6c4ccf",
+                "441b7b89",
+                "f0ab278a",
+                "4a7a7846",
+                "24a2fcc9",
+                "b6137c2f",
+                "5c6a2625",
+                "845a5489",
+                "2986897a",
+                "4b9993b4",
+                "1816b0db",
+                "a9abc7f7",
+                "04f565f2",
+                "1d693caa",
+                "a6d520bb",
+                "a7510016"
+              ]
+            },
+            "stages": {
+              "validate": {
+                "accepted": 12000,
+                "rejected": 0
+              },
+              "pii": {
+                "enabled": false,
+                "redacted_records": 0
+              },
+              "profile": {
+                "classification_applicable": true,
+                "confidence": 1.0,
+                "task_type": "binary"
+              },
+              "dedup": {
+                "method": "exact",
+                "rejected": 0
+              },
+              "score_refine": {
+                "mode": "off",
+                "scored": 0,
+                "refined": 0
+              },
+              "filter": {
+                "action": "skipped",
+                "reason": "quality_mode=off does not produce per-row scores",
+                "accepted": 12000,
+                "rejected": 0
+              },
+              "classify": {
+                "action": "existing_labels",
+                "task_type": null,
+                "classes": [
+                  "0",
+                  "1"
+                ],
+                "confidence": 1.0
+              }
+            },
+            "provider": "gemini",
+            "model": "gemini-3.5-flash-lite",
+            "usage": {
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "total_tokens": 0
+            }
+          },
+          "runs": [
+            {
+              "accuracy": 0.9065,
+              "macro_f1": 0.9064971715394391,
+              "train_seconds": 6.205941105999955
+            },
+            {
+              "accuracy": 0.908,
+              "macro_f1": 0.9079844493719439,
+              "train_seconds": 6.774480785999913
+            },
+            {
+              "accuracy": 0.9035,
+              "macro_f1": 0.9034912900889305,
+              "train_seconds": 6.7589939210010925
+            }
+          ],
+          "summary": {
+            "accuracy_mean": 0.906,
+            "accuracy_std": 0.0022912878474779463,
+            "macro_f1_mean": 0.9059909703334378,
+            "macro_f1_std": 0.0022889516882953786,
+            "train_seconds_mean": 6.57980527100032,
+            "train_seconds_std": 0.32386844729062164
+          }
+        },
+        "dirty_raw": {
+          "rows": 22800,
+          "quality": {
+            "input_rows": 22800,
+            "conflicting_duplicate_rows": 4800,
+            "class_skew_duplicate_rows": 4800,
+            "empty_rows": 1200
+          },
+          "runs": [
+            {
+              "accuracy": 0.8385,
+              "macro_f1": 0.8371958984455232,
+              "train_seconds": 11.3322898539991
+            },
+            {
+              "accuracy": 0.85,
+              "macro_f1": 0.8492824336666871,
+              "train_seconds": 12.5656254539972
+            },
+            {
+              "accuracy": 0.8175,
+              "macro_f1": 0.8142886326072019,
+              "train_seconds": 12.306219579000754
+            }
+          ],
+          "summary": {
+            "accuracy_mean": 0.8353333333333334,
+            "accuracy_std": 0.016479785597310816,
+            "macro_f1_mean": 0.8335889882398041,
+            "macro_f1_std": 0.017773544358731557,
+            "train_seconds_mean": 12.068044962332351,
+            "train_seconds_std": 0.6502495955973547
+          }
+        },
+        "dirty_optimized": {
+          "rows": 12000,
+          "quality": {
+            "input_rows": 22800,
+            "output_rows": 12000,
+            "rejected_rows": 10800,
+            "profile": {
+              "format": "raw",
+              "row_count": 21600,
+              "text_fields": [
+                "text"
+              ],
+              "existing_label_field": "label",
+              "classification_applicable": true,
+              "task_type": "binary",
+              "classes": [
+                "0",
+                "1"
+              ],
+              "confidence": 1.0,
+              "reasoning": "Derived the classification task from existing labels.",
+              "sampled_ids": [
+                "d29cb26d",
+                "381d5f27",
+                "3c28b5e8",
+                "91f0daf8",
+                "ce98c8a5",
+                "0bcd7637",
+                "257cbfe6",
+                "d68a1d79",
+                "3c27a4d5",
+                "4c8012be",
+                "192d8553",
+                "2ae3ce9c",
+                "337886ab",
+                "42a85f8e",
+                "54319923",
+                "232a3545",
+                "08873ce8",
+                "300516d1",
+                "14373a0e",
+                "41c0efe5",
+                "b880d514",
+                "e6068cb8",
+                "db1d9a7b",
+                "fd011b4d",
+                "e0d538b8",
+                "afc57d7f",
+                "aea971d5",
+                "6d1d1ae4",
+                "e830d3fb",
+                "9f1cdb4f",
+                "5f1d412b",
+                "8ea48a3a",
+                "a7befaea",
+                "172e2171",
+                "b3f402d3",
+                "0c119a52",
+                "c4ea1bc0",
+                "590339a8",
+                "6f90933f",
+                "a8592899",
+                "911fb8d5",
+                "70f25440",
+                "90164b2d",
+                "e2e0e303",
+                "89a3f34d",
+                "bb542bb6",
+                "b30b8eaa",
+                "144b8e46",
+                "3a93e4c6",
+                "f536f713",
+                "62ba4679",
+                "220af56f",
+                "e6b6183a",
+                "055f2e79",
+                "fce2467c",
+                "f0cb63fc",
+                "20f2fcac",
+                "c7dd58cd",
+                "25094572",
+                "a23a115d",
+                "5360e4e7",
+                "1224d775",
+                "277cbce2",
+                "ebc3526f",
+                "0348d29c",
+                "75251afe",
+                "a1dd9ffd",
+                "e3611474",
+                "c8bf6551",
+                "952e743e",
+                "62a43283",
+                "9fc85c38",
+                "5b8d3543",
+                "de230c23",
+                "2df9d1ab",
+                "863905c0",
+                "b776467d",
+                "3d34d534",
+                "a7499830",
+                "e6ff523a",
+                "a283cc9d",
+                "fcf024c3",
+                "2ec7312e",
+                "3f5299ee",
+                "fca763b9",
+                "05b606c0",
+                "99ebe70e",
+                "22405800",
+                "02b66e8d",
+                "58a714f0",
+                "475af25d",
+                "417d0b9c",
+                "eb86a76c",
+                "c3062837",
+                "e1efb677",
+                "dc1326eb",
+                "8ae8e5a7",
+                "b1d881f2",
+                "f570765f",
+                "f1dbbfc3"
+              ]
+            },
+            "stages": {
+              "validate": {
+                "accepted": 21600,
+                "rejected": 1200
+              },
+              "pii": {
+                "enabled": false,
+                "redacted_records": 0
+              },
+              "profile": {
+                "classification_applicable": true,
+                "confidence": 1.0,
+                "task_type": "binary"
+              },
+              "dedup": {
+                "method": "exact",
+                "rejected": 9600
+              },
+              "score_refine": {
+                "mode": "sampled",
+                "sample_requested": 20,
+                "scored": 20,
+                "failed": 0,
+                "remote_batches": 1,
+                "remote_records": 20,
+                "average_overall_score": 10.0,
+                "minimum_overall_score": 10.0,
+                "refined": 0
+              },
+              "filter": {
+                "action": "skipped",
+                "reason": "quality_mode=sampled does not produce per-row scores",
+                "accepted": 12000,
+                "rejected": 0
+              },
+              "classify": {
+                "action": "existing_labels",
+                "task_type": null,
+                "classes": [
+                  "0",
+                  "1"
+                ],
+                "confidence": 1.0
+              }
+            },
+            "provider": "gemini",
+            "model": "gemini-3.5-flash-lite",
+            "usage": {
+              "input_tokens": 7653,
+              "output_tokens": 2472,
+              "total_tokens": 10125
+            }
+          },
+          "runs": [
+            {
+              "accuracy": 0.9065,
+              "macro_f1": 0.9064971715394391,
+              "train_seconds": 6.2820987480008625
+            },
+            {
+              "accuracy": 0.908,
+              "macro_f1": 0.9079844493719439,
+              "train_seconds": 6.234513870000228
+            },
+            {
+              "accuracy": 0.9035,
+              "macro_f1": 0.9034912900889305,
+              "train_seconds": 6.4739667660032865
+            }
+          ],
+          "summary": {
+            "accuracy_mean": 0.906,
+            "accuracy_std": 0.0022912878474779463,
+            "macro_f1_mean": 0.9059909703334378,
+            "macro_f1_std": 0.0022889516882953786,
+            "train_seconds_mean": 6.330193128001459,
+            "train_seconds_std": 0.12676444450946886
+          }
+        }
+      },
+      "dirty_optimized_minus_dirty_raw": {
+        "accuracy": 0.07066666666666666,
+        "macro_f1": 0.07240198209363369
+      }
+    },
+    "emotion": {
+      "hf_id": "dair-ai/emotion",
+      "description": "English emotion classification",
+      "conditions": {
+        "clean_raw": {
+          "rows": 12000,
+          "quality": {
+            "input_rows": 12000
+          },
+          "runs": [
+            {
+              "accuracy": 0.838,
+              "macro_f1": 0.7784920254856581,
+              "train_seconds": 1.5787411979981698
+            },
+            {
+              "accuracy": 0.838,
+              "macro_f1": 0.7870595695224827,
+              "train_seconds": 1.5168232270007138
+            },
+            {
+              "accuracy": 0.832,
+              "macro_f1": 0.7711222821439597,
+              "train_seconds": 1.4923733689975052
+            }
+          ],
+          "summary": {
+            "accuracy_mean": 0.836,
+            "accuracy_std": 0.003464101615137758,
+            "macro_f1_mean": 0.7788912923840335,
+            "macro_f1_std": 0.007976142099317848,
+            "train_seconds_mean": 1.5293125979987963,
+            "train_seconds_std": 0.04451784768514555
+          }
+        },
+        "clean_optimized": {
+          "rows": 11978,
+          "quality": {
+            "input_rows": 12000,
+            "output_rows": 11978,
+            "rejected_rows": 22,
+            "profile": {
+              "format": "raw",
+              "row_count": 12000,
+              "text_fields": [
+                "text"
+              ],
+              "existing_label_field": "label",
+              "classification_applicable": true,
+              "task_type": "multi-class",
+              "classes": [
+                "0",
+                "1",
+                "2",
+                "3",
+                "4",
+                "5"
+              ],
+              "confidence": 1.0,
+              "reasoning": "Derived the classification task from existing labels.",
+              "sampled_ids": [
+                "b972d9c3",
+                "32b4309f",
+                "84b32989",
+                "b5d94e96",
+                "8442101b",
+                "970640a6",
+                "f00d223e",
+                "23e1dc7c",
+                "693e3543",
+                "8d62790b",
+                "0bfadff4",
+                "1f6ec1c6",
+                "9f21eebf",
+                "b6142016",
+                "6fb92730",
+                "7083c522",
+                "441b61fa",
+                "5c72e8f6",
+                "46c2bfb5",
+                "255493c4",
+                "c0f7d333",
+                "89128e81",
+                "bf5f4270",
+                "5bf0897e",
+                "34c1cc78",
+                "9b99abee",
+                "5156143d",
+                "03e8f26a",
+                "89777828",
+                "e2479e12",
+                "f1000b7a",
+                "45f706c7",
+                "20a57d6d",
+                "00b9f76c",
+                "9d0496b8",
+                "861ca2d2",
+                "3f749d8c",
+                "2a549633",
+                "77ac7b62",
+                "66891310",
+                "ec2a3b03",
+                "46da5fd2",
+                "21dae5c8",
+                "f90c4573",
+                "fec52706",
+                "fefed3f1",
+                "4744770a",
+                "f56f31cb",
+                "fceed5e0",
+                "bbc3f8c2",
+                "08e95314",
+                "9d392ab1",
+                "6ca8ad04",
+                "80d1bdf3",
+                "9f224933",
+                "16fd9361",
+                "29f30557",
+                "6692d8c3",
+                "8714a89b",
+                "2929aaa2",
+                "1c688d5c",
+                "9f17e279",
+                "d4519d11",
+                "0693ca82",
+                "33f70a58",
+                "68bdcf40",
+                "01d02ba1",
+                "ed545e08",
+                "f899a697",
+                "45e4b624",
+                "d59024d7",
+                "f01ac717",
+                "c199f5ee",
+                "d370cc17",
+                "52d4f8da",
+                "12dbf82c",
+                "cf28498b",
+                "cd8fe355",
+                "21d5d924",
+                "91786e22",
+                "db040339",
+                "bf102534",
+                "75835acc",
+                "57ac0f20",
+                "434e99cf",
+                "8d25bd9e",
+                "46d3c258",
+                "f922f994",
+                "5b01b35e",
+                "0a81b521",
+                "a9fb3327",
+                "5881df74",
+                "d67ea850",
+                "8fa23794",
+                "8044ad94",
+                "da39db44",
+                "4a473695",
+                "4f47ee7d",
+                "21404e2f",
+                "8ce2a14e"
+              ]
+            },
+            "stages": {
+              "validate": {
+                "accepted": 12000,
+                "rejected": 0
+              },
+              "pii": {
+                "enabled": false,
+                "redacted_records": 0
+              },
+              "profile": {
+                "classification_applicable": true,
+                "confidence": 1.0,
+                "task_type": "multi-class"
+              },
+              "dedup": {
+                "method": "exact",
+                "rejected": 22
+              },
+              "score_refine": {
+                "mode": "off",
+                "scored": 0,
+                "refined": 0
+              },
+              "filter": {
+                "action": "skipped",
+                "reason": "quality_mode=off does not produce per-row scores",
+                "accepted": 11978,
+                "rejected": 0
+              },
+              "classify": {
+                "action": "existing_labels",
+                "task_type": null,
+                "classes": [
+                  "0",
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ],
+                "confidence": 1.0
+              }
+            },
+            "provider": "gemini",
+            "model": "gemini-3.5-flash-lite",
+            "usage": {
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "total_tokens": 0
+            }
+          },
+          "runs": [
+            {
+              "accuracy": 0.8385,
+              "macro_f1": 0.7817281353130645,
+              "train_seconds": 1.5056639870017534
+            },
+            {
+              "accuracy": 0.8375,
+              "macro_f1": 0.7819283139595413,
+              "train_seconds": 1.6169347729992296
+            },
+            {
+              "accuracy": 0.837,
+              "macro_f1": 0.7779582045808945,
+              "train_seconds": 1.6927425220019359
+            }
+          ],
+          "summary": {
+            "accuracy_mean": 0.8376666666666667,
+            "accuracy_std": 0.0007637626158259982,
+            "macro_f1_mean": 0.7805382179511667,
+            "macro_f1_std": 0.0022365977769179114,
+            "train_seconds_mean": 1.6051137606676396,
+            "train_seconds_std": 0.09409780451137702
+          }
+        },
+        "dirty_raw": {
+          "rows": 22800,
+          "quality": {
+            "input_rows": 22800,
+            "conflicting_duplicate_rows": 4800,
+            "class_skew_duplicate_rows": 4800,
+            "empty_rows": 1200
+          },
+          "runs": [
+            {
+              "accuracy": 0.714,
+              "macro_f1": 0.6300750077644302,
+              "train_seconds": 3.051733898002567
+            },
+            {
+              "accuracy": 0.722,
+              "macro_f1": 0.6480077714584626,
+              "train_seconds": 2.810835924999992
+            },
+            {
+              "accuracy": 0.701,
+              "macro_f1": 0.6270230202474029,
+              "train_seconds": 2.8410354490006284
+            }
+          ],
+          "summary": {
+            "accuracy_mean": 0.7123333333333333,
+            "accuracy_std": 0.010598742063723106,
+            "macro_f1_mean": 0.6350352664900986,
+            "macro_f1_std": 0.011337683661872681,
+            "train_seconds_mean": 2.901201757334396,
+            "train_seconds_std": 0.13123622534602555
+          }
+        },
+        "dirty_optimized": {
+          "rows": 11978,
+          "quality": {
+            "input_rows": 22800,
+            "output_rows": 11978,
+            "rejected_rows": 10822,
+            "profile": {
+              "format": "raw",
+              "row_count": 21600,
+              "text_fields": [
+                "text"
+              ],
+              "existing_label_field": "label",
+              "classification_applicable": true,
+              "task_type": "multi-class",
+              "classes": [
+                "0",
+                "1",
+                "2",
+                "3",
+                "4",
+                "5"
+              ],
+              "confidence": 1.0,
+              "reasoning": "Derived the classification task from existing labels.",
+              "sampled_ids": [
+                "0ea4b3e7",
+                "d5337efb",
+                "68ccdb4d",
+                "ee459f8f",
+                "a13d84cf",
+                "e99f8f72",
+                "73382f41",
+                "3b62173b",
+                "01165922",
+                "20d96c30",
+                "98eff1ca",
+                "a753c57d",
+                "49926a84",
+                "37221a14",
+                "9ac9808a",
+                "f6af9154",
+                "1d9be743",
+                "b7dfc4ec",
+                "4ee47e8c",
+                "93ffc9f5",
+                "a13c13ec",
+                "cfaf61a3",
+                "c810584f",
+                "b77873c2",
+                "fedcfa21",
+                "d544212c",
+                "525fe7b6",
+                "f4bee0dc",
+                "5df6497d",
+                "a8f4b843",
+                "98a45098",
+                "a67ca180",
+                "673f584e",
+                "62e1c198",
+                "2565df0a",
+                "470a30b7",
+                "7c3bb77a",
+                "58bc2721",
+                "01ebc198",
+                "fb63fe0b",
+                "06abc55e",
+                "0f4b93e6",
+                "429f5980",
+                "f55531be",
+                "413d9647",
+                "6b6eea0e",
+                "b4b7743a",
+                "da4fed74",
+                "fdda4542",
+                "2b98ee6f",
+                "3acc18a4",
+                "8c33ef52",
+                "9ce5a3bc",
+                "4a90f605",
+                "5a440a78",
+                "cbe04e0e",
+                "96882418",
+                "a4e3154e",
+                "0ca7057a",
+                "d79b6196",
+                "b883196c",
+                "d38b0728",
+                "e49e008c",
+                "c77b6f91",
+                "76ee5a3b",
+                "4d4caddf",
+                "55ea4666",
+                "eedfc47e",
+                "d4317a39",
+                "e3942ab8",
+                "77d4faab",
+                "472ddd7f",
+                "d07ca0a8",
+                "866ca612",
+                "6680b77c",
+                "1441ff71",
+                "11832481",
+                "ec88a298",
+                "4f17b0cb",
+                "9a66cd7f",
+                "c6bcf9cb",
+                "ea15728a",
+                "9d358014",
+                "00347cd4",
+                "718290b3",
+                "31a3aaab",
+                "5750870d",
+                "254436a8",
+                "9ef5c5cf",
+                "76e900e7",
+                "8211f4d3",
+                "ad6b8977",
+                "315f681d",
+                "6e38f8d9",
+                "9f62565d",
+                "399b41c0",
+                "ec8273e8",
+                "38ac86a4",
+                "6ad01013",
+                "aa601a25"
+              ]
+            },
+            "stages": {
+              "validate": {
+                "accepted": 21600,
+                "rejected": 1200
+              },
+              "pii": {
+                "enabled": false,
+                "redacted_records": 0
+              },
+              "profile": {
+                "classification_applicable": true,
+                "confidence": 1.0,
+                "task_type": "multi-class"
+              },
+              "dedup": {
+                "method": "exact",
+                "rejected": 9622
+              },
+              "score_refine": {
+                "mode": "sampled",
+                "sample_requested": 20,
+                "scored": 20,
+                "failed": 0,
+                "remote_batches": 1,
+                "remote_records": 20,
+                "average_overall_score": 9.0,
+                "minimum_overall_score": 9.0,
+                "refined": 0
+              },
+              "filter": {
+                "action": "skipped",
+                "reason": "quality_mode=sampled does not produce per-row scores",
+                "accepted": 11978,
+                "rejected": 0
+              },
+              "classify": {
+                "action": "existing_labels",
+                "task_type": null,
+                "classes": [
+                  "0",
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ],
+                "confidence": 1.0
+              }
+            },
+            "provider": "gemini",
+            "model": "gemini-3.5-flash-lite",
+            "usage": {
+              "input_tokens": 1693,
+              "output_tokens": 2421,
+              "total_tokens": 4114
+            }
+          },
+          "runs": [
+            {
+              "accuracy": 0.8385,
+              "macro_f1": 0.7817281353130645,
+              "train_seconds": 1.493714579999505
+            },
+            {
+              "accuracy": 0.8375,
+              "macro_f1": 0.7819283139595413,
+              "train_seconds": 1.5083332750000409
+            },
+            {
+              "accuracy": 0.837,
+              "macro_f1": 0.7779582045808945,
+              "train_seconds": 1.6029110009985743
+            }
+          ],
+          "summary": {
+            "accuracy_mean": 0.8376666666666667,
+            "accuracy_std": 0.0007637626158259982,
+            "macro_f1_mean": 0.7805382179511667,
+            "macro_f1_std": 0.0022365977769179114,
+            "train_seconds_mean": 1.5349862853327068,
+            "train_seconds_std": 0.05927690789503436
+          }
+        }
+      },
+      "dirty_optimized_minus_dirty_raw": {
+        "accuracy": 0.1253333333333334,
+        "macro_f1": 0.14550295146106818
+      }
+    }
+  }
+}

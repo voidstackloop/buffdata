@@ -1,0 +1,85 @@
+# NOTE: this chart has been written against the real CLI surface (buffdata/cli/main.py)
+# but `helm lint`/`helm template` have not been run against it in this environment (no
+# helm binary available here). Render it yourself before trusting it in a cluster.
+
+image:
+  repository: buffdata
+  tag: "0.3.0"
+  pullPolicy: IfNotPresent
+
+# Default command uses `buffdata score` directly against s3:// URLs -- one of the 9 CLI
+# commands with native cloud-storage support (buffdata/models/formats.py's fsspec
+# integration), so no PVC or data-staging sidecar is needed: the pod reads/writes S3
+# directly via the IAM role bound through serviceAccount.annotations below.
+#
+# `buffdata pipeline` (the full 7-stage orchestrator) deliberately rejects cloud URLs --
+# its checkpoint/fingerprint/sidecar-artifact paths assume a local filesystem (see the
+# BadParameter message in cli/main.py's pipeline_cmd). To run the full pipeline instead
+# of a single stage, mount a PVC at /data, seed it before the Job starts, and switch to:
+#   command: ["pipeline", "/config/pipeline.yaml", "-i", "/data/input.jsonl", "-o", "/data/output.jsonl"]
+# with pipelineConfig.enabled: true below.
+command:
+  - score
+  - "s3://CHANGEME-bucket/datasets/input.jsonl"
+  - "-o"
+  - "s3://CHANGEME-bucket/datasets/scored.jsonl"
+  - "--provider"
+  - gemini
+  - "--network-policy"
+  - unrestricted
+
+# Full PipelineConfig YAML (buffdata/models/schemas.py), mounted at /config/pipeline.yaml
+# and used only when command is switched to the `pipeline` orchestrator above.
+pipelineConfig:
+  enabled: false
+  yaml: |
+    provider: gemini
+    quality_mode: llm
+    filter_min_score: 7.0
+    scrub_pii: true
+    accuracy_contract: strict
+    network_policy: unrestricted
+    observability: true
+    report_html: true
+
+# How the run is triggered. "Job" for an on-demand/CI-triggered run, "CronJob" for a
+# recurring schedule (e.g. nightly re-optimization of a growing dataset).
+kind: Job
+schedule: "0 3 * * *"   # only used when kind: CronJob
+backoffLimit: 2
+activeDeadlineSeconds: 21600  # 6h ceiling so a stuck run doesn't hold the node forever
+
+# Provider API keys and BUFFDATA_SECRET_BACKEND (buffdata/engine/secrets.py). Leaving
+# apiKeys empty and setting secretBackend to something other than "env" (aws_secrets_manager,
+# vault, gcp_secret_manager, azure_key_vault) is the recommended production path -- it
+# keeps keys out of the Helm release/values entirely; the pod resolves them at runtime
+# through the IAM role / workload identity bound via serviceAccount.annotations.
+secretBackend: env   # env | aws_secrets_manager | vault | gcp_secret_manager | azure_key_vault
+apiKeys:
+  geminiApiKey: ""
+  openaiApiKey: ""
+  anthropicApiKey: ""
+# Only read when secretBackend: aws_secrets_manager (maps to BUFFDATA_AWS_SECRET_ID).
+awsSecretId: ""
+awsRegion: ""
+
+serviceAccount:
+  create: true
+  name: ""
+  # EKS IRSA example -- bind to the IAM role Terraform outputs
+  # (deploy/terraform/aws, output `buffdata_role_arn`), which is scoped to exactly the
+  # one S3 bucket and one Secrets Manager secret this release needs.
+  annotations: {}
+    # eks.amazonaws.com/role-arn: "arn:aws:iam::CHANGEME:role/buffdata-runner"
+
+resources:
+  requests:
+    cpu: "1"
+    memory: 2Gi
+  limits:
+    cpu: "2"
+    memory: 4Gi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

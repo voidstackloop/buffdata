@@ -1,0 +1,19 @@
+buffdata ({{ .Values.kind }}) "{{ include "buffdata.fullname" . }}" has been queued.
+
+Follow the run:
+{{- if eq .Values.kind "Job" }}
+  kubectl logs -f job/{{ include "buffdata.fullname" . }}
+{{- else }}
+  kubectl get cronjob {{ include "buffdata.fullname" . }}
+  kubectl logs -f job/<the-cronjob's-most-recent-job-name>
+{{- end }}
+
+Command this release runs:
+{{ toYaml .Values.command | indent 2 }}
+{{- if eq .Values.secretBackend "env" }}
+
+secretBackend is "env" -- provider keys came from values.apiKeys via a plain Kubernetes
+Secret, which also lands in `helm get values`/release history. Fine for a quick trial;
+switch secretBackend to aws_secrets_manager / vault / gcp_secret_manager /
+azure_key_vault for anything real (buffdata/engine/secrets.py).
+{{- end }}

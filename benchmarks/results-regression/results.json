@@ -1,0 +1,304 @@
+{
+  "method": {
+    "hf_id": "fancyzhx/ag_news",
+    "train_rows": 3000,
+    "test_rows": 2000,
+    "epochs": 6,
+    "seeds": [
+      17,
+      29,
+      43
+    ],
+    "model": "EmbeddingBag(mean, 64) + Linear",
+    "device": "cpu",
+    "shared_vocabulary_per_panel": true,
+    "remote_llm_calls": 0
+  },
+  "preservation": {
+    "conditions": {
+      "original_dataset": {
+        "rows": 3000,
+        "runs": [
+          {
+            "accuracy": 0.84,
+            "macro_f1": 0.8394490582227896,
+            "train_seconds": 0.8479413320001186
+          },
+          {
+            "accuracy": 0.828,
+            "macro_f1": 0.8270322704213595,
+            "train_seconds": 0.8087696460006555
+          },
+          {
+            "accuracy": 0.8265,
+            "macro_f1": 0.8255408883014028,
+            "train_seconds": 0.7746147359994211
+          }
+        ],
+        "summary": {
+          "accuracy_mean": 0.8315,
+          "accuracy_std": 0.007399324293474359,
+          "macro_f1_mean": 0.830674072315184,
+          "macro_f1_std": 0.007635858721580663,
+          "train_seconds_mean": 0.8104419046667317,
+          "train_seconds_std": 0.036691889526802454
+        }
+      },
+      "regressed_generated": {
+        "rows": 3000,
+        "runs": [
+          {
+            "accuracy": 0.804,
+            "macro_f1": 0.803324218397058,
+            "train_seconds": 0.7699158420000458
+          },
+          {
+            "accuracy": 0.8115,
+            "macro_f1": 0.810358131078514,
+            "train_seconds": 0.7700042090000352
+          },
+          {
+            "accuracy": 0.8055,
+            "macro_f1": 0.8046105408596208,
+            "train_seconds": 0.7485342390000369
+          }
+        ],
+        "summary": {
+          "accuracy_mean": 0.807,
+          "accuracy_std": 0.003968626966596869,
+          "macro_f1_mean": 0.806097630111731,
+          "macro_f1_std": 0.0037453381336526484,
+          "train_seconds_mean": 0.762818096666706,
+          "train_seconds_std": 0.012370262509862805
+        }
+      },
+      "repaired_generated": {
+        "rows": 3000,
+        "runs": [
+          {
+            "accuracy": 0.84,
+            "macro_f1": 0.8394490582227896,
+            "train_seconds": 0.7676789930001178
+          },
+          {
+            "accuracy": 0.828,
+            "macro_f1": 0.8270322704213595,
+            "train_seconds": 0.7782930419998593
+          },
+          {
+            "accuracy": 0.8265,
+            "macro_f1": 0.8255408883014028,
+            "train_seconds": 0.7755916719997913
+          }
+        ],
+        "summary": {
+          "accuracy_mean": 0.8315,
+          "accuracy_std": 0.007399324293474359,
+          "macro_f1_mean": 0.830674072315184,
+          "macro_f1_std": 0.007635858721580663,
+          "train_seconds_mean": 0.7738545689999228,
+          "train_seconds_std": 0.005516126735884747
+        }
+      }
+    },
+    "repaired_minus_regressed": {
+      "accuracy": 0.024499999999999966,
+      "macro_f1": 0.02457644220345301
+    },
+    "repaired_minus_original": {
+      "accuracy": 0.0,
+      "macro_f1": 0.0
+    },
+    "changed_rows": {
+      "regressed_generated": 2767,
+      "repaired_generated": 0
+    },
+    "repaired_text_identical": true,
+    "pipeline_metrics": {
+      "input_records": 3000,
+      "stages": {
+        "validate": {
+          "accepted": 3000,
+          "rejected": 0
+        },
+        "pii": {
+          "enabled": false,
+          "policy": "off",
+          "redacted_records": 0
+        },
+        "profile": {
+          "classification_applicable": true,
+          "confidence": 1.0,
+          "task_type": "multi-class"
+        },
+        "dedup": {
+          "method": "off",
+          "rejected": 0
+        },
+        "score_refine": {
+          "mode": "off",
+          "requested_mode": "off",
+          "scored": 0,
+          "refined": 0
+        },
+        "filter": {
+          "action": "skipped",
+          "reason": "accuracy_contract=strict preserves labeled rows",
+          "accepted": 3000,
+          "rejected": 0
+        },
+        "classify": {
+          "action": "strict_existing_labels",
+          "task_type": null,
+          "classes": [
+            "0",
+            "1",
+            "2",
+            "3"
+          ],
+          "confidence": 1.0
+        }
+      },
+      "accepted_records": 3000,
+      "rejected_records": 0,
+      "accuracy_contract": "strict",
+      "provider": "gemini",
+      "model": "offline-no-remote",
+      "usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "total_tokens": 0
+      }
+    }
+  },
+  "value": {
+    "conditions": {
+      "original_contaminated": {
+        "rows": 5700,
+        "runs": [
+          {
+            "accuracy": 0.752,
+            "macro_f1": 0.7511916601612778,
+            "train_seconds": 1.4208336159999817
+          },
+          {
+            "accuracy": 0.7425,
+            "macro_f1": 0.7430333155584623,
+            "train_seconds": 1.3877487489999112
+          },
+          {
+            "accuracy": 0.76,
+            "macro_f1": 0.758400774538988,
+            "train_seconds": 1.3840753609993044
+          }
+        ],
+        "summary": {
+          "accuracy_mean": 0.7515000000000001,
+          "accuracy_std": 0.008760707733967595,
+          "macro_f1_mean": 0.7508752500862427,
+          "macro_f1_std": 0.007688614009119128,
+          "train_seconds_mean": 1.3975525753330658,
+          "train_seconds_std": 0.020245458398161695
+        }
+      },
+      "generated_optimized": {
+        "rows": 3000,
+        "runs": [
+          {
+            "accuracy": 0.849,
+            "macro_f1": 0.8474178480091736,
+            "train_seconds": 0.762119898000492
+          },
+          {
+            "accuracy": 0.846,
+            "macro_f1": 0.8458401118765004,
+            "train_seconds": 0.7740637070000957
+          },
+          {
+            "accuracy": 0.8325,
+            "macro_f1": 0.8312208677001195,
+            "train_seconds": 0.8032486629999767
+          }
+        ],
+        "summary": {
+          "accuracy_mean": 0.8425,
+          "accuracy_std": 0.008789197915623449,
+          "macro_f1_mean": 0.8414929425285979,
+          "macro_f1_std": 0.00893078685153104,
+          "train_seconds_mean": 0.7798107560001881,
+          "train_seconds_std": 0.021158101444903002
+        }
+      }
+    },
+    "generated_minus_original": {
+      "accuracy": 0.09099999999999997,
+      "macro_f1": 0.09061769244235518
+    },
+    "defects": {
+      "conflicting_duplicate_rows": 1200,
+      "class_skew_duplicate_rows": 1200,
+      "empty_rows": 300
+    },
+    "pipeline_metrics": {
+      "input_records": 5700,
+      "stages": {
+        "validate": {
+          "accepted": 5400,
+          "rejected": 300
+        },
+        "pii": {
+          "enabled": false,
+          "policy": "identifiers",
+          "redacted_records": 0
+        },
+        "profile": {
+          "classification_applicable": true,
+          "confidence": 1.0,
+          "task_type": "multi-class"
+        },
+        "dedup": {
+          "method": "exact",
+          "rejected": 2400
+        },
+        "score_refine": {
+          "mode": "off",
+          "requested_mode": "off",
+          "scored": 0,
+          "refined": 0
+        },
+        "filter": {
+          "action": "skipped",
+          "reason": "quality_mode=off does not produce per-row scores",
+          "accepted": 3000,
+          "rejected": 0
+        },
+        "classify": {
+          "action": "disabled",
+          "task_type": null,
+          "classes": [
+            "0",
+            "1",
+            "2",
+            "3"
+          ],
+          "confidence": 1.0
+        }
+      },
+      "accepted_records": 3000,
+      "rejected_records": 2700,
+      "accuracy_contract": "balanced",
+      "provider": "gemini",
+      "model": "offline-no-remote",
+      "usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "total_tokens": 0
+      }
+    }
+  },
+  "gates": {
+    "regression_recovered": true,
+    "original_preserved": true,
+    "value_improved": true
+  }
+}

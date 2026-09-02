@@ -1,0 +1,6 @@
+.git/
+.venv/
+__pycache__/
+benchmarks/results/
+benchmarks/results-large/
+graphify-out/

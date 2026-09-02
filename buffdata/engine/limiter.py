@@ -2,7 +2,9 @@ import asyncio
 import random
 import time
 from typing import Callable, Coroutine, TypeVar
-from tenacity import AsyncRetrying, stop_after_attempt, wait_exponential_jitter, retry_if_exception_type
+from tenacity import AsyncRetrying, stop_after_attempt, wait_exponential_jitter, retry_if_not_exception_type
+
+from buffdata.engine.client import ProviderError
 
 T = TypeVar("T")
 
@@ -25,15 +27,20 @@ class AsyncRateLimiter:
     async def acquire(self):
         """Acquire permission under RPM and concurrency constraints."""
         await self._semaphore.acquire()
-        async with self._lock:
-            now = time.monotonic()
-            # Prune timestamps older than 60s
-            self._timestamps = [t for t in self._timestamps if now - t < 60.0]
-            if len(self._timestamps) >= self.max_rpm:
+        while True:
+            sleep_time = 0.0
+            async with self._lock:
+                now = time.monotonic()
+                # Prune timestamps older than 60s
+                self._timestamps = [t for t in self._timestamps if now - t < 60.0]
+                if len(self._timestamps) < self.max_rpm:
+                    self._timestamps.append(time.monotonic())
+                    return
                 sleep_time = 60.0 - (now - self._timestamps[0]) + 0.05
-                if sleep_time > 0:
-                    await asyncio.sleep(sleep_time)
-            self._timestamps.append(time.monotonic())
+            
+            # Sleep OUTSIDE the lock to prevent massive traffic jams!
+            if sleep_time > 0:
+                await asyncio.sleep(sleep_time)
 
     def release(self):
         """Release concurrency slot."""
@@ -47,10 +54,16 @@ class AsyncRateLimiter:
         self.release()
 
     async def execute_with_retry(self, func: Callable[[], Coroutine[None, None, T]]) -> T:
-        """Execute an async operation with automatic retry on transient or rate-limit errors."""
+        """Execute an async operation with automatic retry on transient or rate-limit errors.
+
+        ProviderError (a missing API key, an unsupported provider, a network-policy block)
+        is never retried -- none of those recover by waiting and trying again, so retrying
+        them only adds up to ~15s of pointless exponential backoff before failing anyway.
+        """
         async for attempt in AsyncRetrying(
             stop=stop_after_attempt(self.max_retries),
             wait=wait_exponential_jitter(initial=1.0, max=30.0, jitter=1.0),
+            retry=retry_if_not_exception_type(ProviderError),
             reraise=True,
         ):
             with attempt:

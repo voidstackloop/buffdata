@@ -7,6 +7,13 @@ from buffdata.optimizers.preference import PreferenceBuilder
 from buffdata.optimizers.dedup import Deduplicator
 from buffdata.engine.client import GeminiClient
 
+
+@pytest.fixture
+def mock_gemini(monkeypatch):
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    return GeminiClient(allow_mock=True)
+
 def test_fast_rule_filter():
     rf = FastRuleFilter(min_prompt_len=5, min_response_len=5)
     passed, issues = rf.evaluate("hi", "bye")
@@ -18,8 +25,8 @@ def test_fast_rule_filter():
     assert len(issues_ok) == 0
 
 @pytest.mark.asyncio
-async def test_mock_scorer():
-    client = GeminiClient() # in mock mode when no API key
+async def test_mock_scorer(mock_gemini):
+    client = mock_gemini
     scorer = QualityScorer(client=client)
     item = DatasetItem(format=DatasetFormat.ALPACA, instruction="What is 2+2?", output="2+2 is 4.")
     res = await scorer.score_item_async(item)
@@ -27,24 +34,24 @@ async def test_mock_scorer():
     assert res.quality_score.overall_score >= 0.0
 
 @pytest.mark.asyncio
-async def test_mock_refiner():
-    client = GeminiClient()
+async def test_mock_refiner(mock_gemini):
+    client = mock_gemini
     refiner = DataRefiner(client=client)
     item = DatasetItem(format=DatasetFormat.ALPACA, instruction="Explain recursion", output="Certainly! Recursion is...")
     res = await refiner.refine_item_async(item)
     assert res.metadata.get("refined") is True
 
 @pytest.mark.asyncio
-async def test_mock_evolver():
-    client = GeminiClient()
+async def test_mock_evolver(mock_gemini):
+    client = mock_gemini
     evolver = DataEvolver(client=client)
     item = DatasetItem(format=DatasetFormat.ALPACA, instruction="Sort a list", output="Use sort()")
     res = await evolver.evolve_item_async(item)
     assert res is not None
 
 @pytest.mark.asyncio
-async def test_mock_preference():
-    client = GeminiClient()
+async def test_mock_preference(mock_gemini):
+    client = mock_gemini
     dpo_builder = PreferenceBuilder(client=client)
     item = DatasetItem(format=DatasetFormat.ALPACA, instruction="What is gravity?", output="A force.")
     dpo_item = await dpo_builder.build_dpo_pair_async(item)

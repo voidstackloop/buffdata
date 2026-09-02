@@ -70,7 +70,7 @@ class ReportGenerator:
         return md
 
     @classmethod
-    def generate_html_report(cls, items: List[DatasetItem], output_file: Path) -> Path:
+    def generate_html_report(cls, items: List[DatasetItem], output_file: Path, provider: str = "configured provider") -> Path:
         stats = cls.compute_stats(items)
         sample_rows = items[:10]
 
@@ -211,7 +211,7 @@ class ReportGenerator:
 <body>
     <div class="container">
         <h1>🚀 BuffData Optimization Report</h1>
-        <div class="subtitle">Audited with Google Gemini API</div>
+        <div class="subtitle">Audited with {provider}</div>
 
         <div class="metrics-grid">
             <div class="metric-card">

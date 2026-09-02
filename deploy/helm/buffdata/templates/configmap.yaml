@@ -1,0 +1,11 @@
+{{- if .Values.pipelineConfig.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "buffdata.fullname" . }}-config
+  labels:
+    {{- include "buffdata.labels" . | nindent 4 }}
+data:
+  pipeline.yaml: |
+{{ .Values.pipelineConfig.yaml | indent 4 }}
+{{- end }}

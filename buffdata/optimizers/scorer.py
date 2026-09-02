@@ -1,9 +1,10 @@
 import asyncio
+import json
 import re
 from typing import List, Optional, Tuple
-from buffdata.engine.client import GeminiClient
+from buffdata.engine.client import GeminiClient, LLMClient, ProviderError
 from buffdata.engine.limiter import AsyncRateLimiter
-from buffdata.models.schemas import DatasetItem, QualityScore
+from buffdata.models.schemas import DatasetItem, QualityAuditBatch, QualityScore
 
 class FastRuleFilter:
     """Heuristic rule-based pre-filter to detect degenerate, corrupted, or low-effort data."""
@@ -73,19 +74,29 @@ class QualityScorer:
 
     def __init__(
         self,
-        client: Optional[GeminiClient] = None,
+        client: Optional[LLMClient] = None,
         limiter: Optional[AsyncRateLimiter] = None,
-        model: str = "gemini-3.7-flash",
+        model: Optional[str] = None,
     ):
         self.client = client or GeminiClient()
         self.limiter = limiter or AsyncRateLimiter()
-        self.model = model
+        self.model = model or self.client.default_model
         self.rule_filter = FastRuleFilter()
+        self.last_audit_metrics = {"remote_batches": 0, "remote_records": 0}
+
+    @staticmethod
+    def _content(item: DatasetItem) -> tuple[str, str]:
+        prompt, response = item.get_prompt_and_response()
+        if not prompt and not response:
+            response = item.get_classification_text()
+        if not prompt and response:
+            prompt = response
+        return prompt, response
 
     async def score_item_async(self, item: DatasetItem) -> DatasetItem:
         """Evaluate a single dataset item and attach QualityScore."""
-        prompt, response = item.get_prompt_and_response()
-        
+        prompt, response = self._content(item)
+
         # 1. Fast heuristic pre-check
         passed_rules, rule_issues = self.rule_filter.evaluate(prompt, response)
         if not passed_rules:
@@ -123,6 +134,8 @@ class QualityScorer:
             )
             item.quality_score = score
             item.metadata["rule_check_passed"] = True
+        except ProviderError:
+            raise
         except Exception as e:
             item.metadata["scoring_error"] = str(e)
             item.quality_score = QualityScore(
@@ -137,6 +150,92 @@ class QualityScorer:
             )
 
         return item
+
+    async def audit_sample_batch_async(
+        self,
+        items: List[DatasetItem],
+        batch_size: int = 20,
+        task_type: Optional[str] = None,
+        classes: Optional[List[str]] = None,
+    ) -> List[DatasetItem]:
+        """Audit a representative sample with many records per structured request."""
+        remote_items: List[DatasetItem] = []
+        for item in items:
+            prompt, response = self._content(item)
+            passed_rules, rule_issues = self.rule_filter.evaluate(prompt, response)
+            if not passed_rules:
+                item.quality_score = QualityScore(
+                    overall_score=2.0,
+                    clarity=3.0,
+                    factual_accuracy=3.0,
+                    reasoning_depth=1.0,
+                    instruction_following=2.0,
+                    is_safe=True,
+                    issues=rule_issues,
+                    recommendations="Failed basic heuristic checks: " + "; ".join(rule_issues),
+                )
+                item.metadata["rule_check_passed"] = False
+            else:
+                remote_items.append(item)
+
+        chunks = [remote_items[index:index + batch_size] for index in range(0, len(remote_items), batch_size)]
+        self.last_audit_metrics = {
+            "remote_batches": len(chunks),
+            "remote_records": len(remote_items),
+        }
+
+        async def audit_chunk(chunk: List[DatasetItem]) -> None:
+            records = []
+            for item in chunk:
+                prompt, response = self._content(item)
+                records.append({
+                    "item_id": item.id,
+                    "prompt": prompt[:2500],
+                    "response": response[:2500],
+                    "labels": item.labels,
+                })
+            task_context = ""
+            if task_type:
+                task_context = f"""
+These are labeled {task_type} classification records with known classes: {classes or []}.
+Judge overall quality by suitability for supervised classification and text/label consistency.
+Interpret factual_accuracy as label consistency, reasoning_depth as whether the text contains
+enough signal for its label, and instruction_following as schema/label compliance. Do not
+penalize a record merely for being short, informal, or lacking an instruction/answer pair.
+"""
+            audit_prompt = (
+                "Audit every record below. Return exactly one entry per item_id, preserve each item_id "
+                "verbatim, and apply the scoring rubric independently to each record.\n"
+                + task_context
+                + "\n"
+                + json.dumps(records, ensure_ascii=False)
+            )
+            try:
+                result: QualityAuditBatch = await self.limiter.execute_with_retry(
+                    lambda: self.client.generate_structured_async(
+                        prompt=audit_prompt,
+                        response_schema=QualityAuditBatch,
+                        model=self.model,
+                        system_instruction=SCORER_SYSTEM_PROMPT,
+                        temperature=0.1,
+                    )
+                )
+                by_id = {entry.item_id: entry.score for entry in result.entries}
+                for item in chunk:
+                    score = by_id.get(item.id)
+                    if score is None:
+                        item.metadata["scoring_error"] = "Batch audit returned no score for this item_id."
+                    else:
+                        item.quality_score = score
+                        item.metadata["rule_check_passed"] = True
+            except ProviderError:
+                raise
+            except Exception as exc:
+                for item in chunk:
+                    item.metadata["scoring_error"] = str(exc)
+
+        await asyncio.gather(*(audit_chunk(chunk) for chunk in chunks))
+        return items
 
     async def score_batch_async(
         self,

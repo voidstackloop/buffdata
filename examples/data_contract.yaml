@@ -1,0 +1,32 @@
+# Example Data Contract. A data-governance team owns this file, versions it, and reviews
+# changes the same way they'd review any other policy -- separately from whatever CLI flags
+# an individual engineer happened to run `buffdata optimize`/`generate` with that day.
+#
+# Check a completed run against it with:
+#   buffdata contract check examples/data_contract.yaml --report path/to/output.report.json
+#
+# For a min_relative_accuracy_gain requirement, also pass the accuracy-gate evidence when it
+# isn't already inside report.json (buffdata generate writes it to a separate
+# *.accuracy_gate.json alongside its output; `optimize --require-positive-gain` writes it
+# into report.json's own metrics.accuracy_gate block, so no extra flag is needed there):
+#   buffdata contract check examples/data_contract.yaml \
+#     --report path/to/output.report.json \
+#     --accuracy-gate path/to/output.accuracy_gate.json
+#
+# Exits 0 when every requirement is met and 1 otherwise, so it composes directly into a CI
+# pipeline: `buffdata contract check ... && deploy_dataset.sh` (or `|| exit 1`).
+
+contract_version: "1"
+name: "customer-support-tickets"
+description: >
+  Minimum bar for any customer support ticket dataset before it's used for fine-tuning.
+  Cleaning must measurably help (not just run), PII must be redacted at least to the
+  identifiers level, the pipeline must not have made any external network call, and no more
+  than 1 in 5 rows may end up quarantined (a high rejection rate usually means the source
+  data itself needs attention, not just cleaning).
+
+requirements:
+  min_relative_accuracy_gain: 0.10
+  required_pii_policy: identifiers
+  required_network_policy: strict
+  max_rejected_fraction: 0.20

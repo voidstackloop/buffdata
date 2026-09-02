@@ -1,0 +1,261 @@
+{
+  "method": {
+    "hf_id": "fancyzhx/ag_news",
+    "sizes": [
+      20000,
+      100000
+    ],
+    "test_rows": 7000,
+    "epochs": 6,
+    "seeds": [
+      17,
+      29,
+      43
+    ],
+    "model": "EmbeddingBag(mean, 64) + Linear",
+    "device": "cpu",
+    "remote_llm_calls": 0
+  },
+  "sizes": {
+    "20000": {
+      "row_identity": true,
+      "metric_identity": true,
+      "conditions": {
+        "original": {
+          "rows": 20000,
+          "runs": [
+            {
+              "accuracy": 0.8805714285714286,
+              "macro_f1": 0.8805704781759524,
+              "train_seconds": 7.138787673000479
+            },
+            {
+              "accuracy": 0.8828571428571429,
+              "macro_f1": 0.8828936007191489,
+              "train_seconds": 6.7863818819996595
+            },
+            {
+              "accuracy": 0.8798571428571429,
+              "macro_f1": 0.8798321533881159,
+              "train_seconds": 6.730199288000222
+            }
+          ],
+          "summary": {
+            "accuracy_mean": 0.8810952380952382,
+            "accuracy_std": 0.0015670935878004221,
+            "macro_f1_mean": 0.8810987440944057,
+            "macro_f1_std": 0.0015976274911949197,
+            "train_seconds_mean": 6.885122947666787,
+            "train_seconds_std": 0.221468881845937
+          }
+        },
+        "strict_generated": {
+          "rows": 20000,
+          "runs": [
+            {
+              "accuracy": 0.8805714285714286,
+              "macro_f1": 0.8805704781759524,
+              "train_seconds": 6.884701126999971
+            },
+            {
+              "accuracy": 0.8828571428571429,
+              "macro_f1": 0.8828936007191489,
+              "train_seconds": 6.6840948449998905
+            },
+            {
+              "accuracy": 0.8798571428571429,
+              "macro_f1": 0.8798321533881159,
+              "train_seconds": 7.634599273000276
+            }
+          ],
+          "summary": {
+            "accuracy_mean": 0.8810952380952382,
+            "accuracy_std": 0.0015670935878004221,
+            "macro_f1_mean": 0.8810987440944057,
+            "macro_f1_std": 0.0015976274911949197,
+            "train_seconds_mean": 7.067798415000046,
+            "train_seconds_std": 0.5010071152856234
+          }
+        }
+      },
+      "pipeline_metrics": {
+        "input_records": 20000,
+        "stages": {
+          "validate": {
+            "accepted": 20000,
+            "rejected": 0
+          },
+          "pii": {
+            "enabled": false,
+            "policy": "off",
+            "redacted_records": 0
+          },
+          "profile": {
+            "classification_applicable": true,
+            "confidence": 1.0,
+            "task_type": "multi-class"
+          },
+          "dedup": {
+            "method": "off",
+            "rejected": 0
+          },
+          "score_refine": {
+            "mode": "off",
+            "requested_mode": "llm",
+            "scored": 0,
+            "refined": 0
+          },
+          "filter": {
+            "action": "skipped",
+            "reason": "accuracy_contract=strict preserves labeled rows",
+            "accepted": 20000,
+            "rejected": 0
+          },
+          "classify": {
+            "action": "strict_existing_labels",
+            "task_type": null,
+            "classes": [
+              "0",
+              "1",
+              "2",
+              "3"
+            ],
+            "confidence": 1.0
+          }
+        },
+        "accepted_records": 20000,
+        "rejected_records": 0,
+        "accuracy_contract": "strict",
+        "provider": "gemini",
+        "model": "offline-no-remote",
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0
+        }
+      }
+    },
+    "100000": {
+      "row_identity": true,
+      "metric_identity": true,
+      "conditions": {
+        "original": {
+          "rows": 100000,
+          "runs": [
+            {
+              "accuracy": 0.8962857142857142,
+              "macro_f1": 0.8962619895007955,
+              "train_seconds": 43.893636608000634
+            },
+            {
+              "accuracy": 0.8975714285714286,
+              "macro_f1": 0.8973003065929025,
+              "train_seconds": 46.358084354999846
+            },
+            {
+              "accuracy": 0.8952857142857142,
+              "macro_f1": 0.8951743018530981,
+              "train_seconds": 48.151005986999735
+            }
+          ],
+          "summary": {
+            "accuracy_mean": 0.8963809523809524,
+            "accuracy_std": 0.0011458294681444034,
+            "macro_f1_mean": 0.896245532648932,
+            "macro_f1_std": 0.0010630979067788792,
+            "train_seconds_mean": 46.134242316666736,
+            "train_seconds_std": 2.1374932633586563
+          }
+        },
+        "strict_generated": {
+          "rows": 100000,
+          "runs": [
+            {
+              "accuracy": 0.8962857142857142,
+              "macro_f1": 0.8962619895007955,
+              "train_seconds": 45.14478154100016
+            },
+            {
+              "accuracy": 0.8975714285714286,
+              "macro_f1": 0.8973003065929025,
+              "train_seconds": 50.62820083299994
+            },
+            {
+              "accuracy": 0.8952857142857142,
+              "macro_f1": 0.8951743018530981,
+              "train_seconds": 47.37167085500005
+            }
+          ],
+          "summary": {
+            "accuracy_mean": 0.8963809523809524,
+            "accuracy_std": 0.0011458294681444034,
+            "macro_f1_mean": 0.896245532648932,
+            "macro_f1_std": 0.0010630979067788792,
+            "train_seconds_mean": 47.714884409666716,
+            "train_seconds_std": 2.757774182388587
+          }
+        }
+      },
+      "pipeline_metrics": {
+        "input_records": 100000,
+        "stages": {
+          "validate": {
+            "accepted": 100000,
+            "rejected": 0
+          },
+          "pii": {
+            "enabled": false,
+            "policy": "off",
+            "redacted_records": 0
+          },
+          "profile": {
+            "classification_applicable": true,
+            "confidence": 1.0,
+            "task_type": "multi-class"
+          },
+          "dedup": {
+            "method": "off",
+            "rejected": 0
+          },
+          "score_refine": {
+            "mode": "off",
+            "requested_mode": "llm",
+            "scored": 0,
+            "refined": 0
+          },
+          "filter": {
+            "action": "skipped",
+            "reason": "accuracy_contract=strict preserves labeled rows",
+            "accepted": 100000,
+            "rejected": 0
+          },
+          "classify": {
+            "action": "strict_existing_labels",
+            "task_type": null,
+            "classes": [
+              "0",
+              "1",
+              "2",
+              "3"
+            ],
+            "confidence": 1.0
+          }
+        },
+        "accepted_records": 100000,
+        "rejected_records": 0,
+        "accuracy_contract": "strict",
+        "provider": "gemini",
+        "model": "offline-no-remote",
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0
+        }
+      }
+    }
+  },
+  "gates": {
+    "20000": true,
+    "100000": true
+  }
+}

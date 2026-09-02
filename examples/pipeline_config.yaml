@@ -1,8 +1,15 @@
+provider: "gemini"
 model: "gemini-3.7-flash"
-fast_model: "gemini-3.5-flash-lite"
-embedding_model: "text-embedding-004"
+embedding_provider: "local"
+embedding_model: "all-MiniLM-L6-v2"
 concurrency: 10
 max_rpm: 60
+
+# For large datasets, audit a representative sample in structured batches.
+# Use "llm" only when every row must be scored and filtered; "off" is fully local.
+quality_mode: "sampled"
+quality_sample_size: 40
+quality_audit_batch_size: 20
 
 # Filter threshold
 filter_min_score: 7.5
@@ -20,3 +27,11 @@ evolution_depth: 1
 # Deduplication
 dedup_threshold: 0.85
 dedup_method: "minhash"
+
+# Infer binary, multi-class, or multi-label only when appropriate.
+classification: "auto"
+classification_confidence: 0.75
+classification_sample_size: 100
+
+# PII is redacted locally before any provider call.
+scrub_pii: true

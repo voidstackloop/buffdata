@@ -1,0 +1,44 @@
+# Example access policy. Answers "is this actor allowed to do this" -- authorization only,
+# not authentication: it has no opinion on how you established that a request really is from
+# the named actor by itself. Pair it with real SSO via --bearer-token/--oidc-config (see
+# examples/oidc_config.yaml) when "alice" needs to be a *verified* identity rather than a
+# trusted string -- --actor stays useful on its own for trusted/scripted contexts (CI, an
+# internal service account) where there's no human token to check.
+#
+# Use it with any command that talks to an LLM provider:
+#   buffdata score data.jsonl -o scored.jsonl --actor bob --policy examples/access_policy.yaml
+#   buffdata optimize data.jsonl -o out.jsonl --actor bob --policy examples/access_policy.yaml
+#   buffdata score data.jsonl -o scored.jsonl --bearer-token "$OIDC_TOKEN" \
+#       --oidc-config examples/oidc_config.yaml --policy examples/access_policy.yaml
+#
+# An identity (--actor, or a verified --bearer-token/--oidc-config pair) and --policy must
+# be given together, or not at all -- omit both and behavior is completely unaffected (this
+# is an opt-in check, never a silent default).
+#
+# Two permissions are checked:
+#   run                    baseline: may invoke buffdata commands at all
+#   use_external_providers may set --network-policy unrestricted (i.e., actually reach a
+#                           public/private LLM API). Without it, an actor is confined to
+#                           --network-policy strict -- the zero-network guarantee from
+#                           NetworkForbiddenClient -- no matter what else they pass.
+#
+# An actor missing from this file, or assigned a role missing the needed permission, is
+# denied. There is no default-allow.
+
+policy_version: "1"
+name: "default-policy"
+
+roles:
+  restricted:
+    # e.g. an external contractor: may run buffdata, but only ever in --network-policy
+    # strict mode -- their runs can never send data to an external provider.
+    permissions: ["run"]
+  operator:
+    permissions: ["run", "use_external_providers"]
+  admin:
+    permissions: ["run", "use_external_providers"]
+
+actors:
+  alice: admin
+  bob: operator
+  contractor_x: restricted

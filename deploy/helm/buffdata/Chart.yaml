@@ -1,0 +1,8 @@
+apiVersion: v2
+name: buffdata
+description: >-
+  Runs `buffdata pipeline` as a Kubernetes Job (one-shot) or CronJob (recurring)
+  against a dataset in cloud or mounted storage.
+type: application
+version: 0.1.0
+appVersion: "0.3.0"

@@ -1,5 +1,23 @@
 import pytest
-from buffdata.models.schemas import DatasetItem, DatasetFormat, ChatMessage, QualityScore
+from buffdata.models.schemas import DatasetItem, DatasetFormat, ChatMessage, PipelineConfig, QualityScore
+
+
+@pytest.mark.parametrize(
+    "provider", ["gemini", "openai", "anthropic", "azure_openai", "bedrock_anthropic", "openai_compatible"],
+)
+def test_pipeline_config_accepts_every_llm_provider(provider):
+    # PipelineConfig.validate_provider checks against buffdata.engine.client.LLMProvider
+    # directly rather than its own hardcoded list, specifically so the two can't drift out
+    # of sync the way they once did when private-endpoint providers were added to the client
+    # but not here.
+    config = PipelineConfig(provider=provider)
+    assert config.provider == provider
+
+
+def test_pipeline_config_rejects_unknown_provider():
+    with pytest.raises(ValueError, match="provider must be one of"):
+        PipelineConfig(provider="not-a-real-provider")
+
 
 def test_alpaca_schema():
     item = DatasetItem(
@@ -46,3 +64,10 @@ def test_dpo_schema():
     d = item.to_dict()
     assert d["chosen"] == "Good joke"
     assert d["rejected"] == "Bad joke"
+
+
+def test_huggingface_integer_label_is_preserved():
+    item = DatasetItem.from_dict({"text": "A market headline", "label": 2})
+
+    assert item.labels == 2
+    assert item.to_dict()["labels"] == 2

@@ -1,14 +1,20 @@
 import hashlib
 from typing import List, Optional, Set, Tuple
 import numpy as np
-from buffdata.engine.client import GeminiClient
+from buffdata.engine.client import GeminiClient, LLMClient
 from buffdata.models.schemas import DatasetItem
 
 class Deduplicator:
     """Performs exact, lexical (MinHash n-gram), and semantic embedding deduplication."""
 
-    def __init__(self, client: Optional[GeminiClient] = None):
+    def __init__(self, client: Optional[LLMClient] = None):
         self.client = client or GeminiClient()
+
+    @staticmethod
+    def _content(item: DatasetItem) -> str:
+        prompt, response = item.get_prompt_and_response()
+        combined = f"{prompt} {response}".strip()
+        return combined or item.get_classification_text()
 
     def deduplicate_exact(self, items: List[DatasetItem]) -> Tuple[List[DatasetItem], List[DatasetItem]]:
         """Fast exact deduplication based on prompt+response SHA256 hashes."""
@@ -16,10 +22,10 @@ class Deduplicator:
         kept: List[DatasetItem] = []
         dropped: List[DatasetItem] = []
 
+        import xxhash
         for it in items:
-            p, r = it.get_prompt_and_response()
-            combined = f"{p.strip()}|{r.strip()}".encode("utf-8")
-            h = hashlib.sha256(combined).hexdigest()
+            combined = self._content(it).strip().encode("utf-8")
+            h = xxhash.xxh64(combined).hexdigest()
             if h in seen_hashes:
                 it.metadata["dedup_reason"] = "exact_duplicate"
                 dropped.append(it)
@@ -46,9 +52,8 @@ class Deduplicator:
         dropped: List[DatasetItem] = []
 
         for it in items:
-            p, r = it.get_prompt_and_response()
-            curr_shingles = get_shingles(f"{p} {r}")
-            
+            curr_shingles = get_shingles(self._content(it))
+
             is_dup = False
             for prev_shingles in shingle_sets:
                 union = len(curr_shingles.union(prev_shingles))
@@ -65,6 +70,44 @@ class Deduplicator:
                 kept.append(it)
         return kept, dropped
 
+
+    def deduplicate_semantic_local(
+        self,
+        items: List[DatasetItem],
+        threshold: float = 0.85,
+        batch_size: int = 32,
+        model_name: str = "all-MiniLM-L6-v2",
+    ) -> Tuple[List[DatasetItem], List[DatasetItem]]:
+        """Deduplicate items semantically using a local PyTorch SentenceTransformer model."""
+        import torch
+        from sentence_transformers import SentenceTransformer, util
+
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        # Load a small, fast model
+        model = SentenceTransformer(model_name, device=device)
+
+        texts = []
+        for item in items:
+            texts.append(self._content(item))
+
+        print(f"Encoding {len(texts)} items locally using PyTorch on {device}...")
+        embeddings = model.encode(texts, batch_size=batch_size, convert_to_tensor=True)
+
+        kept_indices: List[int] = []
+        dropped: List[DatasetItem] = []
+        for index, item in enumerate(items):
+            if not kept_indices:
+                kept_indices.append(index)
+                continue
+            similarities = util.cos_sim(embeddings[index], embeddings[kept_indices])[0]
+            best = float(torch.max(similarities).item())
+            if best >= threshold:
+                item.metadata["dedup_reason"] = f"semantic_local_dup (sim: {best:.3f})"
+                dropped.append(item)
+            else:
+                kept_indices.append(index)
+        return [items[index] for index in kept_indices], dropped
+
     def deduplicate_semantic(
         self,
         items: List[DatasetItem],
@@ -74,7 +117,7 @@ class Deduplicator:
         if not items:
             return [], []
 
-        texts = [f"{it.get_prompt_and_response()[0]} {it.get_prompt_and_response()[1]}" for it in items]
+        texts = [self._content(item) for item in items]
         embeddings = self.client.embed_texts(texts)
         vecs = np.array(embeddings, dtype=np.float32)
 

@@ -7,11 +7,16 @@ from buffdata.models.schemas import (
     EvolutionResult,
     PreferenceResult,
     PipelineConfig,
+    ClassificationMode,
+    ClassificationTask,
+    DatasetProfile,
+    OptimizationRunResult,
 )
 from buffdata.models.formats import (
     detect_format,
     read_dataset,
     write_dataset,
+    write_dataset_atomic,
     iter_dataset,
 )
 
@@ -24,8 +29,13 @@ __all__ = [
     "EvolutionResult",
     "PreferenceResult",
     "PipelineConfig",
+    "ClassificationMode",
+    "ClassificationTask",
+    "DatasetProfile",
+    "OptimizationRunResult",
     "detect_format",
     "read_dataset",
     "write_dataset",
+    "write_dataset_atomic",
     "iter_dataset",
 ]

@@ -1,0 +1,335 @@
+{
+  "method": {
+    "train_rows": 3000,
+    "test_rows": 1000,
+    "epochs": 6,
+    "seeds": [
+      17,
+      29,
+      43
+    ],
+    "model": "EmbeddingBag(mean, 64) + Linear",
+    "device": "cpu",
+    "dirty_recipe": {
+      "conflicting_duplicates": 0.4,
+      "class_skew_duplicates": 0.4,
+      "empty_rows": 0.1
+    }
+  },
+  "datasets": {
+    "ag_news": {
+      "hf_id": "fancyzhx/ag_news",
+      "description": "AG News topic classification",
+      "conditions": {
+        "clean_raw": {
+          "rows": 3000,
+          "quality": {
+            "input_rows": 3000
+          },
+          "runs": [
+            {
+              "accuracy": 0.845,
+              "macro_f1": 0.8431182086854503,
+              "train_seconds": 0.8887713369986159
+            },
+            {
+              "accuracy": 0.836,
+              "macro_f1": 0.8357375671842029,
+              "train_seconds": 0.7391570609979681
+            },
+            {
+              "accuracy": 0.836,
+              "macro_f1": 0.8355602653423222,
+              "train_seconds": 0.7391049249999924
+            }
+          ],
+          "summary": {
+            "accuracy_mean": 0.839,
+            "accuracy_std": 0.005196152422706636,
+            "macro_f1_mean": 0.8381386804039918,
+            "macro_f1_std": 0.004313309102669009,
+            "train_seconds_mean": 0.7890111076655254,
+            "train_seconds_std": 0.08639489682257669
+          }
+        },
+        "clean_optimized": {
+          "rows": 3000,
+          "quality": {
+            "input_rows": 3000,
+            "output_rows": 3000,
+            "invalid_removed": 0,
+            "duplicates_removed": 0,
+            "detected_task": "multi-class",
+            "detected_classes": [
+              "0",
+              "1",
+              "2",
+              "3"
+            ],
+            "detection_confidence": 1.0
+          },
+          "runs": [
+            {
+              "accuracy": 0.845,
+              "macro_f1": 0.8431182086854503,
+              "train_seconds": 0.7344169040006818
+            },
+            {
+              "accuracy": 0.836,
+              "macro_f1": 0.8357375671842029,
+              "train_seconds": 0.7059361649990024
+            },
+            {
+              "accuracy": 0.836,
+              "macro_f1": 0.8355602653423222,
+              "train_seconds": 0.8342404679970059
+            }
+          ],
+          "summary": {
+            "accuracy_mean": 0.839,
+            "accuracy_std": 0.005196152422706636,
+            "macro_f1_mean": 0.8381386804039918,
+            "macro_f1_std": 0.004313309102669009,
+            "train_seconds_mean": 0.7581978456655634,
+            "train_seconds_std": 0.06737691319585849
+          }
+        },
+        "dirty_raw": {
+          "rows": 5700,
+          "quality": {
+            "input_rows": 5700,
+            "conflicting_duplicate_rows": 1200,
+            "class_skew_duplicate_rows": 1200,
+            "empty_rows": 300
+          },
+          "runs": [
+            {
+              "accuracy": 0.763,
+              "macro_f1": 0.7620787962120805,
+              "train_seconds": 1.3345496469992213
+            },
+            {
+              "accuracy": 0.736,
+              "macro_f1": 0.7365424173340196,
+              "train_seconds": 1.4123036399978446
+            },
+            {
+              "accuracy": 0.76,
+              "macro_f1": 0.7583679331068777,
+              "train_seconds": 1.3579397039975447
+            }
+          ],
+          "summary": {
+            "accuracy_mean": 0.753,
+            "accuracy_std": 0.014798648586948755,
+            "macro_f1_mean": 0.7523297155509926,
+            "macro_f1_std": 0.013797525683618715,
+            "train_seconds_mean": 1.368264330331537,
+            "train_seconds_std": 0.03989197022597296
+          }
+        },
+        "dirty_optimized": {
+          "rows": 3000,
+          "quality": {
+            "input_rows": 5700,
+            "output_rows": 3000,
+            "invalid_removed": 300,
+            "duplicates_removed": 2400,
+            "detected_task": "multi-class",
+            "detected_classes": [
+              "0",
+              "1",
+              "2",
+              "3"
+            ],
+            "detection_confidence": 1.0
+          },
+          "runs": [
+            {
+              "accuracy": 0.845,
+              "macro_f1": 0.8431182086854503,
+              "train_seconds": 0.7193512169978931
+            },
+            {
+              "accuracy": 0.836,
+              "macro_f1": 0.8357375671842029,
+              "train_seconds": 0.7263648860025569
+            },
+            {
+              "accuracy": 0.836,
+              "macro_f1": 0.8355602653423222,
+              "train_seconds": 0.6877282310015289
+            }
+          ],
+          "summary": {
+            "accuracy_mean": 0.839,
+            "accuracy_std": 0.005196152422706636,
+            "macro_f1_mean": 0.8381386804039918,
+            "macro_f1_std": 0.004313309102669009,
+            "train_seconds_mean": 0.7111481113339929,
+            "train_seconds_std": 0.020583148066244568
+          }
+        }
+      },
+      "dirty_optimized_minus_dirty_raw": {
+        "accuracy": 0.08599999999999997,
+        "macro_f1": 0.08580896485299916
+      }
+    },
+    "imdb": {
+      "hf_id": "stanfordnlp/imdb",
+      "description": "IMDb sentiment classification",
+      "conditions": {
+        "clean_raw": {
+          "rows": 3000,
+          "quality": {
+            "input_rows": 3000
+          },
+          "runs": [
+            {
+              "accuracy": 0.833,
+              "macro_f1": 0.8328781681846065,
+              "train_seconds": 1.5323977240004751
+            },
+            {
+              "accuracy": 0.824,
+              "macro_f1": 0.8239147747509794,
+              "train_seconds": 1.4821292240012554
+            },
+            {
+              "accuracy": 0.835,
+              "macro_f1": 0.8349628666449951,
+              "train_seconds": 1.480159807997552
+            }
+          ],
+          "summary": {
+            "accuracy_mean": 0.8306666666666667,
+            "accuracy_std": 0.00585946527708232,
+            "macro_f1_mean": 0.8305852698601937,
+            "macro_f1_std": 0.005870103974311277,
+            "train_seconds_mean": 1.4982289186664275,
+            "train_seconds_std": 0.029607433075427916
+          }
+        },
+        "clean_optimized": {
+          "rows": 3000,
+          "quality": {
+            "input_rows": 3000,
+            "output_rows": 3000,
+            "invalid_removed": 0,
+            "duplicates_removed": 0,
+            "detected_task": "binary",
+            "detected_classes": [
+              "0",
+              "1"
+            ],
+            "detection_confidence": 1.0
+          },
+          "runs": [
+            {
+              "accuracy": 0.833,
+              "macro_f1": 0.8328781681846065,
+              "train_seconds": 1.47779053299746
+            },
+            {
+              "accuracy": 0.824,
+              "macro_f1": 0.8239147747509794,
+              "train_seconds": 1.4673945860013191
+            },
+            {
+              "accuracy": 0.835,
+              "macro_f1": 0.8349628666449951,
+              "train_seconds": 1.4761411170002248
+            }
+          ],
+          "summary": {
+            "accuracy_mean": 0.8306666666666667,
+            "accuracy_std": 0.00585946527708232,
+            "macro_f1_mean": 0.8305852698601937,
+            "macro_f1_std": 0.005870103974311277,
+            "train_seconds_mean": 1.473775411999668,
+            "train_seconds_std": 0.005587159260204395
+          }
+        },
+        "dirty_raw": {
+          "rows": 5700,
+          "quality": {
+            "input_rows": 5700,
+            "conflicting_duplicate_rows": 1200,
+            "class_skew_duplicate_rows": 1200,
+            "empty_rows": 300
+          },
+          "runs": [
+            {
+              "accuracy": 0.792,
+              "macro_f1": 0.792,
+              "train_seconds": 2.6792669739988924
+            },
+            {
+              "accuracy": 0.745,
+              "macro_f1": 0.7380399843440366,
+              "train_seconds": 2.7242871329981426
+            },
+            {
+              "accuracy": 0.744,
+              "macro_f1": 0.7371004645927728,
+              "train_seconds": 2.7877393329981714
+            }
+          ],
+          "summary": {
+            "accuracy_mean": 0.7603333333333333,
+            "accuracy_std": 0.027428695436227633,
+            "macro_f1_mean": 0.7557134829789365,
+            "macro_f1_std": 0.03142855648102065,
+            "train_seconds_mean": 2.730431146665069,
+            "train_seconds_std": 0.05449655809931168
+          }
+        },
+        "dirty_optimized": {
+          "rows": 3000,
+          "quality": {
+            "input_rows": 5700,
+            "output_rows": 3000,
+            "invalid_removed": 300,
+            "duplicates_removed": 2400,
+            "detected_task": "binary",
+            "detected_classes": [
+              "0",
+              "1"
+            ],
+            "detection_confidence": 1.0
+          },
+          "runs": [
+            {
+              "accuracy": 0.833,
+              "macro_f1": 0.8328781681846065,
+              "train_seconds": 1.5496982959994057
+            },
+            {
+              "accuracy": 0.824,
+              "macro_f1": 0.8239147747509794,
+              "train_seconds": 1.4597321799992642
+            },
+            {
+              "accuracy": 0.835,
+              "macro_f1": 0.8349628666449951,
+              "train_seconds": 1.5113485069996386
+            }
+          ],
+          "summary": {
+            "accuracy_mean": 0.8306666666666667,
+            "accuracy_std": 0.00585946527708232,
+            "macro_f1_mean": 0.8305852698601937,
+            "macro_f1_std": 0.005870103974311277,
+            "train_seconds_mean": 1.506926327666103,
+            "train_seconds_std": 0.04514578894627041
+          }
+        }
+      },
+      "dirty_optimized_minus_dirty_raw": {
+        "accuracy": 0.07033333333333336,
+        "macro_f1": 0.07487178688125717
+      }
+    }
+  }
+}

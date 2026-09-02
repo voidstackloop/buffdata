@@ -1,0 +1,33 @@
+# Example OIDC config for --oidc-config. Verifies a --bearer-token's signature, expiry,
+# issuer, and audience against your identity provider's real JWKS before trusting any of
+# its claims -- see buffdata/governance/oidc.py for exactly what's checked (and why the
+# verification algorithm always comes from the JWKS, never from the token's own header).
+#
+# Use it together with --policy (examples/access_policy.yaml) so the *verified* identity
+# -- not a trusted --actor string -- is what gets checked for permissions:
+#   buffdata score data.jsonl -o scored.jsonl \
+#       --bearer-token "$OIDC_TOKEN" --oidc-config examples/oidc_config.yaml \
+#       --policy examples/access_policy.yaml
+#
+# `issuer` and `audience` must both match the token's `iss`/`aud` claims exactly -- any
+# standards-compliant OIDC provider (Okta, Auth0, Azure AD, Google Workspace, ...) gives
+# you both when you register buffdata as a client/application.
+issuer: "https://your-idp.example.com/"
+audience: "buffdata"
+
+# Fetched live and cached for jwks_cache_seconds (so key rotation on the IdP's side is
+# picked up automatically, without a restart). Every standards-compliant OIDC provider
+# publishes this; look for `jwks_uri` in your provider's
+# /.well-known/openid-configuration document if you're not sure of the exact path.
+jwks_url: "https://your-idp.example.com/.well-known/jwks.json"
+jwks_cache_seconds: 300
+
+# Which verified claim becomes the actor name that --policy checks permissions against.
+# "sub" (the default) is the IdP's stable subject identifier; "email" is often more
+# readable in a policy file's `actors:` map if your IdP includes it as a claim.
+actor_claim: "sub"
+
+# Clock-skew tolerance for exp/nbf/iat checks, in seconds. 0 is correct when your IdP and
+# this host are both NTP-synced (the normal case); a small value (e.g. 30) only helps if
+# they might drift apart.
+leeway_seconds: 0
