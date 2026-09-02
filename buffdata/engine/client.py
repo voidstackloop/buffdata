@@ -17,6 +17,15 @@ load_dotenv()
 
 T = TypeVar("T", bound=BaseModel)
 
+# None of the provider SDKs default to a bounded request timeout that's actually safe for
+# an unattended CLI/batch run: google-genai's default is unbounded (a stalled connection
+# hangs forever, confirmed by hand -- a single-row classify call never returned), and
+# openai/anthropic default to 600s, long enough to stall a whole run over one bad request.
+# Every client below applies this instead, so a real network hiccup fails fast and lets
+# tenacity's retry (buffdata/engine/limiter.py) actually do its job, rather than the
+# request never completing in the first place.
+DEFAULT_REQUEST_TIMEOUT_SECONDS = float(os.getenv("BUFFDATA_REQUEST_TIMEOUT", "120"))
+
 
 def _resolve_secret(*keys: str) -> Optional[str]:
     """Look up each key, in order, through the configured secret backend (plain
@@ -410,6 +419,7 @@ class AzureOpenAIClient(_ChatCompletionsClient):
                 api_key=self.api_key,
                 azure_endpoint=self.azure_endpoint,
                 api_version=self.api_version,
+                timeout=DEFAULT_REQUEST_TIMEOUT_SECONDS,
             )
         return self._client
 
@@ -463,7 +473,7 @@ class OpenAICompatibleClient(_ChatCompletionsClient):
                 from openai import OpenAI
             except ImportError as exc:
                 raise ProviderError(f"Install openai to use provider '{self.provider.value}'.") from exc
-            self._client = OpenAI(api_key=self.api_key, base_url=self.base_url)
+            self._client = OpenAI(api_key=self.api_key, base_url=self.base_url, timeout=DEFAULT_REQUEST_TIMEOUT_SECONDS)
         return self._client
 
 
@@ -492,9 +502,13 @@ class GeminiClient(_ClientBase):
                 raise MissingAPIKeyError("GEMINI_API_KEY is required for provider 'gemini'.")
             try:
                 from google import genai
+                from google.genai import types as genai_types
             except ImportError as exc:
                 raise ProviderError("Install google-genai to use provider 'gemini'.") from exc
-            self._client = genai.Client(api_key=self.api_key)
+            self._client = genai.Client(
+                api_key=self.api_key,
+                http_options=genai_types.HttpOptions(timeout=int(DEFAULT_REQUEST_TIMEOUT_SECONDS * 1000)),
+            )
         return self._client
 
     def generate_structured(
@@ -591,7 +605,7 @@ class OpenAIClient(_ClientBase):
                 from openai import OpenAI
             except ImportError as exc:
                 raise ProviderError("Install openai to use provider 'openai'.") from exc
-            self._client = OpenAI(api_key=self.api_key)
+            self._client = OpenAI(api_key=self.api_key, timeout=DEFAULT_REQUEST_TIMEOUT_SECONDS)
         return self._client
 
     @staticmethod
@@ -667,7 +681,7 @@ class AnthropicClient(_ClientBase):
                 from anthropic import Anthropic
             except ImportError as exc:
                 raise ProviderError("Install anthropic to use provider 'anthropic'.") from exc
-            self._client = Anthropic(api_key=self.api_key)
+            self._client = Anthropic(api_key=self.api_key, timeout=DEFAULT_REQUEST_TIMEOUT_SECONDS)
         return self._client
 
     @staticmethod
@@ -762,7 +776,11 @@ class BedrockAnthropicClient(AnthropicClient):
                 raise ProviderError(
                     "Install boto3 (pip install buffdata[enterprise]) to use provider 'bedrock_anthropic'."
                 ) from exc
-            self._client = AnthropicBedrock(aws_region=self.aws_region) if self.aws_region else AnthropicBedrock()
+            self._client = (
+                AnthropicBedrock(aws_region=self.aws_region, timeout=DEFAULT_REQUEST_TIMEOUT_SECONDS)
+                if self.aws_region
+                else AnthropicBedrock(timeout=DEFAULT_REQUEST_TIMEOUT_SECONDS)
+            )
         return self._client
 
 

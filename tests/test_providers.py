@@ -211,3 +211,55 @@ def test_gemini_usage_metadata_names_are_recorded():
     )
 
     assert client.usage == {"input_tokens": 11, "output_tokens": 7, "total_tokens": 21}
+
+
+# --- Request timeout: none of the provider SDKs default to a timeout that's actually
+# safe for an unattended CLI run (google-genai's default is unbounded; a stalled
+# connection was confirmed by hand to hang indefinitely with no http_options set) -----
+
+def test_default_request_timeout_is_a_positive_number_of_seconds():
+    import buffdata.engine.client as client_module
+
+    assert client_module.DEFAULT_REQUEST_TIMEOUT_SECONDS > 0
+
+
+def test_request_timeout_env_var_override(monkeypatch):
+    monkeypatch.setenv("BUFFDATA_REQUEST_TIMEOUT", "45")
+    # DEFAULT_REQUEST_TIMEOUT_SECONDS is read once at import time, so importlib.reload
+    # is what actually exercises the env var -- constructing a client with a stale
+    # module-level constant wouldn't prove anything about the override working.
+    import importlib
+
+    import buffdata.engine.client as client_module
+
+    try:
+        reloaded = importlib.reload(client_module)
+        assert reloaded.DEFAULT_REQUEST_TIMEOUT_SECONDS == 45.0
+    finally:
+        monkeypatch.delenv("BUFFDATA_REQUEST_TIMEOUT", raising=False)
+        importlib.reload(client_module)  # restore the default for every test after this one
+
+
+def test_gemini_client_applies_the_configured_timeout():
+    client = GeminiClient(api_key="test")
+    underlying = client.client  # triggers lazy construction
+    assert underlying._api_client._http_options.timeout == int(
+        __import__("buffdata.engine.client", fromlist=["DEFAULT_REQUEST_TIMEOUT_SECONDS"]).DEFAULT_REQUEST_TIMEOUT_SECONDS * 1000
+    )
+
+
+@pytest.mark.parametrize(
+    "make_client",
+    [
+        lambda: OpenAIClient(api_key="test"),
+        lambda: AnthropicClient(api_key="test"),
+        lambda: AzureOpenAIClient(api_key="test", default_model="deployment", azure_endpoint="https://example.openai.azure.com"),
+        lambda: OpenAICompatibleClient(api_key="test", default_model="local-model", base_url="http://localhost:11434/v1"),
+    ],
+)
+def test_openai_and_anthropic_family_clients_apply_the_configured_timeout(make_client):
+    import buffdata.engine.client as client_module
+
+    client = make_client()
+    underlying = client.client
+    assert underlying.timeout == client_module.DEFAULT_REQUEST_TIMEOUT_SECONDS

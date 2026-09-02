@@ -232,6 +232,17 @@ your account before choosing between them at scale.
 - [gemini-3.5-flash-lite report](benchmarks/results-scale-matrix-gemini/REPORT.md)
 - [gemini-3.7-flash report](benchmarks/results-scale-matrix-gemini-3.7-flash/REPORT.md)
 
+### Binary vs. multi-class classification benchmark
+
+A narrower question across 19 more real datasets (10 binary, 9 multi-class): does
+recovery hold the same way for both classification shapes, and how accurate is
+BuffData's own classify stage on each? See
+[docs/classification-benchmark.md](docs/classification-benchmark.md) for the full
+write-up -- recovery is done (binary and multi-class converge to comparable recovery
+by 3,000 rows, though multi-class needs that scale to get past proxy-classifier noise
+that binary doesn't hit until much smaller samples); real classification-accuracy
+numbers are queued behind this API key's `gemini-3.7-flash` daily quota.
+
 BuffData is a provider-neutral Python CLI and SDK for turning raw or inconsistent
 datasets into safer, higher-quality AI training data. It validates structure,
 redacts PII locally, removes duplicates, scores and refines records, quarantines

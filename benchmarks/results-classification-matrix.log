@@ -1,0 +1,203 @@
+Resuming: found 11 dataset(s) already recorded in benchmarks/results-classification-matrix/results.json
+=== yelp_polarity (fancyzhx/yelp_polarity) ===
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+/home/saldev/projects/buffdata/.venv/lib/python3.12/site-packages/torch/autograd/graph.py:979: UserWarning: CUDA initialization: The NVIDIA driver on your system is too old (found version 12070). Please update your GPU driver by downloading and installing a new version from the URL: http://www.nvidia.com/Download/index.aspx Alternatively, go to: https://pytorch.org to install a PyTorch version that has been compiled with your version of the CUDA driver. (Triggered internally at /__w/pytorch/pytorch/c10/cuda/CUDAFunctions.cpp:119.)
+  return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+  [yelp_polarity @ 1000] clean_raw acc=0.8387
+  [yelp_polarity @ 1000] clean_optimized acc=0.8387
+  [yelp_polarity @ 1000] dirty_raw acc=0.7840
+  [yelp_polarity @ 1000] dirty_optimized acc=0.8387
+  [yelp_polarity @ 3000] clean_raw acc=0.8727
+  [yelp_polarity @ 3000] clean_optimized acc=0.8727
+  [yelp_polarity @ 3000] dirty_raw acc=0.8027
+  [yelp_polarity @ 3000] dirty_optimized acc=0.8727
+--- yelp_polarity done in 51.0s (checkpoint saved) ---
+=== amazon_polarity (fancyzhx/amazon_polarity) ===
+  [amazon_polarity @ 1000] clean_raw acc=0.7660
+  [amazon_polarity @ 1000] clean_optimized acc=0.7660
+  [amazon_polarity @ 1000] dirty_raw acc=0.7133
+  [amazon_polarity @ 1000] dirty_optimized acc=0.7660
+  [amazon_polarity @ 3000] clean_raw acc=0.8233
+  [amazon_polarity @ 3000] clean_optimized acc=0.8233
+  [amazon_polarity @ 3000] dirty_raw acc=0.7773
+  [amazon_polarity @ 3000] dirty_optimized acc=0.8233
+--- amazon_polarity done in 132.2s (checkpoint saved) ---
+=== imdb (stanfordnlp/imdb) ===
+  [imdb @ 1000] clean_raw acc=0.8147
+  [imdb @ 1000] clean_optimized acc=0.8147
+  [imdb @ 1000] dirty_raw acc=0.7433
+  [imdb @ 1000] dirty_optimized acc=0.8147
+  [imdb @ 3000] clean_raw acc=0.8560
+  [imdb @ 3000] clean_optimized acc=0.8607
+  [imdb @ 3000] dirty_raw acc=0.7680
+  [imdb @ 3000] dirty_optimized acc=0.8607
+--- imdb done in 38.6s (checkpoint saved) ---
+=== rotten_tomatoes (cornell-movie-review-data/rotten_tomatoes) ===
+  [rotten_tomatoes @ 1000] clean_raw acc=0.6513
+  [rotten_tomatoes @ 1000] clean_optimized acc=0.6513
+  [rotten_tomatoes @ 1000] dirty_raw acc=0.6467
+  [rotten_tomatoes @ 1000] dirty_optimized acc=0.6513
+  [rotten_tomatoes @ 3000] clean_raw acc=0.7013
+  [rotten_tomatoes @ 3000] clean_optimized acc=0.7013
+  [rotten_tomatoes @ 3000] dirty_raw acc=0.6713
+  [rotten_tomatoes @ 3000] dirty_optimized acc=0.7013
+--- rotten_tomatoes done in 13.5s (checkpoint saved) ---
+=== sst2 (SetFit/sst2) ===
+Repo card metadata block was not found. Setting CardData to empty.
+  [sst2 @ 1000] clean_raw acc=0.6480
+  [sst2 @ 1000] clean_optimized acc=0.6480
+  [sst2 @ 1000] dirty_raw acc=0.6540
+  [sst2 @ 1000] dirty_optimized acc=0.6480
+  [sst2 @ 3000] clean_raw acc=0.7540
+  [sst2 @ 3000] clean_optimized acc=0.7520
+  [sst2 @ 3000] dirty_raw acc=0.7020
+  [sst2 @ 3000] dirty_optimized acc=0.7520
+--- sst2 done in 10.0s (checkpoint saved) ---
+=== subj (SetFit/subj) ===
+Repo card metadata block was not found. Setting CardData to empty.
+  [subj @ 1000] clean_raw acc=0.8300
+  [subj @ 1000] clean_optimized acc=0.8300
+  [subj @ 1000] dirty_raw acc=0.7840
+  [subj @ 1000] dirty_optimized acc=0.8300
+  [subj @ 3000] clean_raw acc=0.9067
+  [subj @ 3000] clean_optimized acc=0.9067
+  [subj @ 3000] dirty_raw acc=0.8260
+  [subj @ 3000] dirty_optimized acc=0.9067
+--- subj done in 16.8s (checkpoint saved) ---
+=== tweet_eval_irony (cardiffnlp/tweet_eval/irony) ===
+  [tweet_eval_irony @ 1000] clean_raw acc=0.6160
+  [tweet_eval_irony @ 1000] clean_optimized acc=0.6160
+  [tweet_eval_irony @ 1000] dirty_raw acc=0.5827
+  [tweet_eval_irony @ 1000] dirty_optimized acc=0.6160
+  [tweet_eval_irony @ 2834] clean_raw acc=0.6053
+  [tweet_eval_irony @ 2834] clean_optimized acc=0.6053
+  [tweet_eval_irony @ 2834] dirty_raw acc=0.5787
+  [tweet_eval_irony @ 2834] dirty_optimized acc=0.6053
+--- tweet_eval_irony done in 9.4s (checkpoint saved) ---
+=== tweet_eval_hate (cardiffnlp/tweet_eval/hate) ===
+  [tweet_eval_hate @ 1000] clean_raw acc=0.5173
+  [tweet_eval_hate @ 1000] clean_optimized acc=0.5220
+  [tweet_eval_hate @ 1000] dirty_raw acc=0.5353
+  [tweet_eval_hate @ 1000] dirty_optimized acc=0.5220
+  [tweet_eval_hate @ 3000] clean_raw acc=0.5740
+  [tweet_eval_hate @ 3000] clean_optimized acc=0.5647
+  [tweet_eval_hate @ 3000] dirty_raw acc=0.5813
+  [tweet_eval_hate @ 3000] dirty_optimized acc=0.5647
+--- tweet_eval_hate done in 12.8s (checkpoint saved) ---
+=== cr (SetFit/CR) ===
+Repo card metadata block was not found. Setting CardData to empty.
+  [cr @ 1000] clean_raw acc=0.7451
+  [cr @ 1000] clean_optimized acc=0.7451
+  [cr @ 1000] dirty_raw acc=0.7132
+  [cr @ 1000] dirty_optimized acc=0.7451
+  [cr @ 2458] clean_raw acc=0.7598
+  [cr @ 2458] clean_optimized acc=0.7708
+  [cr @ 2458] dirty_raw acc=0.7145
+  [cr @ 2458] dirty_optimized acc=0.7708
+--- cr done in 7.1s (checkpoint saved) ---
+=== amazon_counterfactual (SetFit/amazon_counterfactual_en) ===
+Repo card metadata block was not found. Setting CardData to empty.
+  [amazon_counterfactual @ 1000] clean_raw acc=0.8173
+  [amazon_counterfactual @ 1000] clean_optimized acc=0.8173
+  [amazon_counterfactual @ 1000] dirty_raw acc=0.7873
+  [amazon_counterfactual @ 1000] dirty_optimized acc=0.8173
+  [amazon_counterfactual @ 1054] clean_raw acc=0.8120
+  [amazon_counterfactual @ 1054] clean_optimized acc=0.8120
+  [amazon_counterfactual @ 1054] dirty_raw acc=0.7633
+  [amazon_counterfactual @ 1054] dirty_optimized acc=0.8120
+--- amazon_counterfactual done in 5.3s (checkpoint saved) ---
+=== ag_news (fancyzhx/ag_news) ===
+  [ag_news @ 1000] clean_raw acc=0.7193
+  [ag_news @ 1000] clean_optimized acc=0.7193
+  [ag_news @ 1000] dirty_raw acc=0.6873
+  [ag_news @ 1000] dirty_optimized acc=0.7193
+  [ag_news @ 3000] clean_raw acc=0.8120
+  [ag_news @ 3000] clean_optimized acc=0.8120
+  [ag_news @ 3000] dirty_raw acc=0.7420
+  [ag_news @ 3000] dirty_optimized acc=0.8120
+--- ag_news done in 18.0s (checkpoint saved) ---
+=== dbpedia_14 (fancyzhx/dbpedia_14) ===
+  [dbpedia_14 @ 1000] clean_raw acc=0.7733
+  [dbpedia_14 @ 1000] clean_optimized acc=0.7733
+  [dbpedia_14 @ 1000] dirty_raw acc=0.7940
+  [dbpedia_14 @ 1000] dirty_optimized acc=0.7733
+  [dbpedia_14 @ 3000] clean_raw acc=0.9173
+  [dbpedia_14 @ 3000] clean_optimized acc=0.9173
+  [dbpedia_14 @ 3000] dirty_raw acc=0.8233
+  [dbpedia_14 @ 3000] dirty_optimized acc=0.9173
+--- dbpedia_14 done in 35.9s (checkpoint saved) ---
+=== yahoo_answers_topics (community-datasets/yahoo_answers_topics) ===
+  [yahoo_answers_topics @ 1000] clean_raw acc=0.4153
+  [yahoo_answers_topics @ 1000] clean_optimized acc=0.4153
+  [yahoo_answers_topics @ 1000] dirty_raw acc=0.4373
+  [yahoo_answers_topics @ 1000] dirty_optimized acc=0.4153
+  [yahoo_answers_topics @ 3000] clean_raw acc=0.5500
+  [yahoo_answers_topics @ 3000] clean_optimized acc=0.5500
+  [yahoo_answers_topics @ 3000] dirty_raw acc=0.5040
+  [yahoo_answers_topics @ 3000] dirty_optimized acc=0.5500
+--- yahoo_answers_topics done in 68.7s (checkpoint saved) ---
+=== emotion (dair-ai/emotion) ===
+  [emotion @ 1000] clean_raw acc=0.4015
+  [emotion @ 1000] clean_optimized acc=0.4015
+  [emotion @ 1000] dirty_raw acc=0.4175
+  [emotion @ 1000] dirty_optimized acc=0.4015
+  [emotion @ 3000] clean_raw acc=0.7079
+  [emotion @ 3000] clean_optimized acc=0.6961
+  [emotion @ 3000] dirty_raw acc=0.5976
+  [emotion @ 3000] dirty_optimized acc=0.6961
+--- emotion done in 14.5s (checkpoint saved) ---
+=== tweet_eval_emotion (cardiffnlp/tweet_eval/emotion) ===
+  [tweet_eval_emotion @ 1000] clean_raw acc=0.4289
+  [tweet_eval_emotion @ 1000] clean_optimized acc=0.4289
+  [tweet_eval_emotion @ 1000] dirty_raw acc=0.4390
+  [tweet_eval_emotion @ 1000] dirty_optimized acc=0.4289
+  [tweet_eval_emotion @ 1176] clean_raw acc=0.4919
+  [tweet_eval_emotion @ 1176] clean_optimized acc=0.4661
+  [tweet_eval_emotion @ 1176] dirty_raw acc=0.4797
+  [tweet_eval_emotion @ 1176] dirty_optimized acc=0.4661
+--- tweet_eval_emotion done in 4.6s (checkpoint saved) ---
+=== tweet_eval_sentiment (cardiffnlp/tweet_eval/sentiment) ===
+  [tweet_eval_sentiment @ 1000] clean_raw acc=0.4440
+  [tweet_eval_sentiment @ 1000] clean_optimized acc=0.4440
+  [tweet_eval_sentiment @ 1000] dirty_raw acc=0.4407
+  [tweet_eval_sentiment @ 1000] dirty_optimized acc=0.4440
+  [tweet_eval_sentiment @ 3000] clean_raw acc=0.4687
+  [tweet_eval_sentiment @ 3000] clean_optimized acc=0.4687
+  [tweet_eval_sentiment @ 3000] dirty_raw acc=0.4627
+  [tweet_eval_sentiment @ 3000] dirty_optimized acc=0.4687
+--- tweet_eval_sentiment done in 8.4s (checkpoint saved) ---
+=== 20_newsgroups (SetFit/20_newsgroups) ===
+Repo card metadata block was not found. Setting CardData to empty.
+  [20_newsgroups @ 1000] clean_raw acc=0.3333
+  [20_newsgroups @ 1000] clean_optimized acc=0.3247
+  [20_newsgroups @ 1000] dirty_raw acc=0.3173
+  [20_newsgroups @ 1000] dirty_optimized acc=0.3247
+  [20_newsgroups @ 3000] clean_raw acc=0.5500
+  [20_newsgroups @ 3000] clean_optimized acc=0.5373
+  [20_newsgroups @ 3000] dirty_raw acc=0.4647
+  [20_newsgroups @ 3000] dirty_optimized acc=0.5373
+--- 20_newsgroups done in 29.2s (checkpoint saved) ---
+=== trec_coarse (SetFit/TREC-QC) ===
+Repo card metadata block was not found. Setting CardData to empty.
+  [trec_coarse @ 516] clean_raw acc=0.6728
+  [trec_coarse @ 516] clean_optimized acc=0.6728
+  [trec_coarse @ 516] dirty_raw acc=0.6975
+  [trec_coarse @ 516] dirty_optimized acc=0.6728
+  [trec_coarse @ 516] clean_raw acc=0.6728
+  [trec_coarse @ 516] clean_optimized acc=0.6728
+  [trec_coarse @ 516] dirty_raw acc=0.6975
+  [trec_coarse @ 516] dirty_optimized acc=0.6728
+--- trec_coarse done in 7.2s (checkpoint saved) ---
+=== tweet_sentiment_extraction (SetFit/tweet_sentiment_extraction) ===
+Repo card metadata block was not found. Setting CardData to empty.
+  [tweet_sentiment_extraction @ 1000] clean_raw acc=0.5140
+  [tweet_sentiment_extraction @ 1000] clean_optimized acc=0.5140
+  [tweet_sentiment_extraction @ 1000] dirty_raw acc=0.5120
+  [tweet_sentiment_extraction @ 1000] dirty_optimized acc=0.5140
+  [tweet_sentiment_extraction @ 3000] clean_raw acc=0.6047
+  [tweet_sentiment_extraction @ 3000] clean_optimized acc=0.6073
+  [tweet_sentiment_extraction @ 3000] dirty_raw acc=0.5480
+  [tweet_sentiment_extraction @ 3000] dirty_optimized acc=0.6073
+--- tweet_sentiment_extraction done in 7.9s (checkpoint saved) ---
+Results: benchmarks/results-classification-matrix/results.json
+Report:  benchmarks/results-classification-matrix/REPORT.md

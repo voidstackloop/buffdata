@@ -27,6 +27,7 @@ Written for three readers:
 | [observability.md](observability.md) | OpenTelemetry tracing and Prometheus metrics per pipeline run |
 | [scaling.md](scaling.md) | Dataset sharding for orchestrator-level parallelism (Airflow/Dagster/k8s), and the Ray-based in-process alternative |
 | [deployment.md](deployment.md) | Docker image, Helm chart, Terraform module -- what's verified and what isn't |
+| [classification-benchmark.md](classification-benchmark.md) | Binary vs. multi-class recovery and classification accuracy across 19 real datasets with gemini-3.7-flash |
 
 ## What's *not* duplicated here
 
