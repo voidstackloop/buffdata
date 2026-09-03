@@ -40,14 +40,27 @@ class Deduplicator:
         threshold: float = 0.85,
         shingle_size: int = 3,
     ) -> Tuple[List[DatasetItem], List[DatasetItem]]:
-        """Lexical near-duplicate removal using Jaccard similarity of character/word shingles."""
-        def get_shingles(text: str) -> Set[str]:
+        """Lexical near-duplicate removal using Jaccard similarity of character/word shingles.
+
+        Each kept item's shingle set is stored as fixed-size 64-bit hash fingerprints
+        (xxhash, already used for exact dedup above), not the raw shingle strings -- for
+        long texts this accumulator (one growing set per kept item, held for the entire
+        file/window) is the dominant memory cost of this stage, and a fixed-size int is far
+        cheaper than a variable-length string built from the original text. The Jaccard
+        computation itself (intersection/union cardinality against the threshold) is
+        unchanged, so decisions are identical except for the same astronomically small
+        hash-collision risk this module already accepts for exact-dedup fingerprints.
+        """
+        import xxhash
+
+        def get_shingles(text: str) -> Set[int]:
             words = text.lower().split()
             if len(words) < shingle_size:
-                return set(words)
-            return set(" ".join(words[i:i+shingle_size]) for i in range(len(words)-shingle_size+1))
+                return {xxhash.xxh64_intdigest(word.encode("utf-8")) for word in words}
+            return {xxhash.xxh64_intdigest(" ".join(words[i:i+shingle_size]).encode("utf-8"))
+                    for i in range(len(words) - shingle_size + 1)}
 
-        shingle_sets: List[Set[str]] = []
+        shingle_sets: List[Set[int]] = []
         kept: List[DatasetItem] = []
         dropped: List[DatasetItem] = []
 

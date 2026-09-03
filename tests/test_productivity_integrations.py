@@ -9,7 +9,7 @@ class Response:
     def __init__(self, payload):
         self.payload = payload
 
-    def read(self):
+    def read(self, size=-1):
         return json.dumps(self.payload).encode("utf-8")
 
     @property

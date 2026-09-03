@@ -1,0 +1,44 @@
+name: Team deployment smoke
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'deploy/**'
+      - 'buffdata/server/**'
+      - 'buffdata/runs/**'
+      - 'buffdata/security/**'
+      - 'buffdata/governance/oidc.py'
+      - 'pyproject.toml'
+      - '.dockerignore'
+      - '.github/workflows/deployment-smoke.yml'
+permissions:
+  contents: read
+jobs:
+  compose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deploy/Dockerfile.team
+          load: true
+          tags: buffdata-team:local
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - run: pip install httpx PyJWT cryptography PyYAML
+      - run: python deploy/smoke_test.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: compose-smoke-results
+          # Never upload the generated secret files, JWT material, or database backup.
+          path: |
+            /tmp/buffdata-compose-smoke-*/results.json
+            /tmp/buffdata-compose-smoke-*/sbom.json
+          if-no-files-found: warn

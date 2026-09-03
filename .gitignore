@@ -16,3 +16,28 @@ outputs/
 *.jsonl
 !examples/*.jsonl
 graphify-out/
+deploy/team/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+benchmarks/results-managed-security/runs/
+.managed-test-artifacts/
+rust-worker/target/
+
+# Generated benchmark run output, not source -- the benchmark scripts themselves are tracked.
+benchmarks/results-*/
+benchmarks/results-*.log
+benchmarks/_*.json
+
+# Stray artifacts that have shown up in this working tree from local runs -- not part of the
+# project. The venv-shaped one (bin/lib/lib64/include/pyvenv.cfg at repo root) came from a
+# `python -m venv` accidentally targeted at the repo root instead of .venv/.
+/bin/
+/lib/
+/lib64
+/include/
+/pyvenv.cfg
+/.stress_output.checkpoint.json
+/stress_25k_out.report.json
+/train_25k_clean.report.json

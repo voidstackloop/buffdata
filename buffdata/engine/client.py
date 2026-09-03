@@ -38,7 +38,8 @@ def _resolve_secret(*keys: str) -> Optional[str]:
     for key in keys:
         value = resolver.get(key)
         if value:
-            return value
+            from buffdata.security.policy import remember_secret
+            return remember_secret(value)
     return None
 
 
@@ -838,6 +839,11 @@ def create_llm_client(
 
     if network_policy not in ("unrestricted", "local", "strict"):
         raise ProviderError("network_policy must be 'unrestricted', 'local', or 'strict'.")
+    from buffdata.security.policy import current_context, check_network_url, remember_secret
+    execution = current_context()
+    if execution:
+        execution.network = network_policy
+    remember_secret(api_key)
     if network_policy == "strict":
         return NetworkForbiddenClient(would_be_provider=selected)
 
@@ -873,6 +879,18 @@ def create_llm_client(
             )
 
     target_model = model or os.getenv("BUFFDATA_DEFAULT_MODEL")
+    if execution:
+        endpoints = {
+            LLMProvider.GEMINI: "https://generativelanguage.googleapis.com",
+            LLMProvider.OPENAI: os.getenv("OPENAI_BASE_URL", "https://api.openai.com"),
+            LLMProvider.ANTHROPIC: os.getenv("ANTHROPIC_BASE_URL", "https://api.anthropic.com"),
+            LLMProvider.AZURE_OPENAI: azure_endpoint or os.getenv("AZURE_OPENAI_ENDPOINT"),
+            LLMProvider.BEDROCK_ANTHROPIC: "https://bedrock-runtime." + (aws_region or os.getenv("AWS_REGION", "us-east-1")) + ".amazonaws.com",
+        }
+        endpoint = resolved_base_url or endpoints.get(selected)
+        if not endpoint:
+            raise ProviderError("Provider endpoint must be configured before execution")
+        check_network_url(endpoint)
     if not target_model and selected not in _NO_DEFAULT_MODEL_PROVIDERS:
         target_model = DEFAULT_MODELS[selected]
 

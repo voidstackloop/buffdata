@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="csrf-token" content="{{ csrf }}"><title>BuffData · Runs</title>
+<link rel="stylesheet" href="/static/dashboard.css"><script defer src="/static/dashboard.js"></script></head>
+<body><header><h1>BuffData <span>Run management</span></h1><p>{{ actor }}</p></header>
+<main><p class="notice">Your optimization settings stay unchanged. Runs and generated artifacts are tracked separately.</p>
+<section><label>Project <select id="project"></select></label><button id="refresh">Refresh</button><button id="logout">Sign out</button></section>
+<section><h2>Start a run</h2><label>Dataset file <input id="file" type="file"></label>
+<label>Pipeline configuration (JSON) <textarea id="configuration" rows="7">{}</textarea></label>
+<button id="submit">Upload and queue</button><p id="message" role="status"></p></section>
+<section><h2>Runs</h2><div id="runs"></div></section>
+<section><h2>Run details</h2><div id="actions"></div><pre id="details">Select a run to inspect its status, manifest, events, or comparison.</pre></section>
+</main></body></html>

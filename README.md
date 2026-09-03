@@ -1,5 +1,29 @@
 # BuffData
 
+## Secure run management — optimization unchanged
+
+Managed CLI/SDK runs now add immutable input snapshots, run history, verified artifact
+manifests, cancellation/resume, and original/generated comparisons. An optional internal-team
+API/dashboard adds OIDC login, project roles, bounded uploads, and project-specific workers.
+
+Compatibility was checked on cached AG News data with the same PyTorch model, six epochs,
+and three seeds for each condition:
+
+| Source / test rows | Original | Legacy optimizer | Managed optimizer |
+|---|---:|---:|---:|
+| 3,000 / 1,000 | 83.90% | 83.90% | 83.90% |
+| 20,000 / 4,000 | 87.80% | 87.80% | 87.80% |
+| 100,000 / 7,000 | 89.38% | 89.38% | 89.38% |
+
+Ordered text/label sequences, accuracy, and macro-F1 matched. These are preservation
+checks, not additional accuracy gains. [Measured results and timing boundaries](benchmarks/results-managed-security/REPORT.md).
+
+Start with `buffdata runs start input.parquet --config pipeline.yaml`.
+See [run management and security policy](docs/run-management.md) and
+[team deployment](docs/team-deployment.md). Docker Compose syntax and image digests are
+verified; live Compose/PostgreSQL/OIDC deployment checks still require a working Docker
+engine and organization identity configuration. Do not treat this as production validation.
+
 ## Verified benchmark results
 
 The latest accuracy gate directly compares matching original AG News records with

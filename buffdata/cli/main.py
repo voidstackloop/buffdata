@@ -28,7 +28,33 @@ app = typer.Typer(
 )
 productivity_app = typer.Typer(help="Documentation and code-graph tools for productive dataset work.")
 app.add_typer(productivity_app, name="productivity")
+from buffdata.runs.cli import app as runs_app
+app.add_typer(runs_app, name="runs")
 console = Console()
+
+
+@app.callback()
+def security_options(
+    ctx: typer.Context,
+    security_policy: Optional[Path] = typer.Option(None, "--security-policy", envvar="BUFFDATA_SECURITY_POLICY"),
+    identity_token_file: Optional[str] = typer.Option(None, "--identity-token-file", help="JWT file, or - for stdin; never put tokens in argv"),
+    identity_oidc_config: Optional[Path] = typer.Option(None, "--identity-oidc-config"),
+    identity_policy: Optional[Path] = typer.Option(None, "--identity-policy"),
+):
+    """Optional managed boundary applying to every legacy command, including pipeline."""
+    from buffdata.security.policy import ExecutionContext, SecurityPolicy, execution_context, SecretFilter
+    import logging
+    if identity_token_file or identity_oidc_config or identity_policy:
+        if not all([identity_token_file, identity_oidc_config, identity_policy]):
+            raise typer.BadParameter("Identity token file, OIDC configuration, and access policy must be supplied together")
+        from buffdata.runs.cli import read_token
+        _enforce_access_policy(None, identity_policy, "unrestricted", bearer_token=read_token(identity_token_file),
+                               oidc_config_file=identity_oidc_config)
+    if security_policy:
+        policy = SecurityPolicy(**(yaml.safe_load(security_policy.read_text()) or {}))
+        ctx.with_resource(execution_context(ExecutionContext(policy=policy)))
+    for handler in logging.getLogger().handlers:
+        handler.addFilter(SecretFilter())
 
 
 def _enforce_access_policy(
@@ -536,7 +562,7 @@ def optimize_cmd(
 
         original_items = read_dataset(input_file)
         validation_items = read_dataset(validation_file)
-        result = asyncio.run(pipeline.run(original_items))
+        result = asyncio.run(pipeline.run([item.model_copy(deep=True) for item in original_items]))
         seeds = [int(value.strip()) for value in accuracy_seeds.split(",") if value.strip()]
         gate = evaluate_accuracy_gain(
             original_items,

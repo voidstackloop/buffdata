@@ -1,0 +1,140 @@
+name: buffdata
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.team
+    image: buffdata-team:local
+    command: [uvicorn, buffdata.server.app:from_environment, --factory, --host, 0.0.0.0, --port, '8000', --no-access-log]
+    user: '${BUFFDATA_UID:-1000}:${BUFFDATA_GID:-1000}'
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs: ['/tmp:rw,noexec,nosuid,size=256m']
+    environment:
+      BUFFDATA_SERVER_CONFIG: /config/server.yaml
+      BUFFDATA_DATABASE_URL_FILE: /run/secrets/database_url
+      HTTPS_PROXY: http://egress:3128
+      HTTP_PROXY: http://egress:3128
+      NO_PROXY: postgres,localhost,127.0.0.1
+    secrets: [database_url, oidc_client_secret]
+    volumes:
+      - ./team/server.yaml:/config/server.yaml:ro
+      - ./team/data:/data
+    networks: [control, database]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, python, -c, 'import urllib.request; urllib.request.urlopen("http://127.0.0.1:8000/healthz", timeout=5)']
+      interval: 10s
+      timeout: 6s
+      start_period: 30s
+      retries: 12
+    mem_limit: 2g
+    cpus: 2
+    restart: unless-stopped
+
+  ingress:
+    image: nginx:stable-alpine@sha256:02b1b2a0445514891a14aa371845f6085d5d9d10d385b30d6aad606a50a29a05
+    entrypoint: [nginx]
+    command: [-c, /etc/nginx/nginx.conf, -g, 'daemon off;']
+    user: '101:101'
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs: ['/tmp:rw,noexec,nosuid,size=32m']
+    volumes: ['./nginx.conf:/etc/nginx/nginx.conf:ro']
+    ports: ['127.0.0.1:8000:8080']
+    networks: [control, edge]
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, 'http://127.0.0.1:8080/healthz']
+      interval: 10s
+      timeout: 6s
+      retries: 12
+    mem_limit: 256m
+    cpus: 1
+    restart: unless-stopped
+
+  worker:
+    image: buffdata-team:local
+    # Rust reimplementation of the same claim loop (see rust-worker/README.md), identical
+    # wire protocol -- swap in with `command: [buffdata-worker]` once you've verified a build
+    # of the rust-worker-builder stage in Dockerfile.team (not verified in a real Docker build
+    # as of this option's addition -- see docs/team-deployment.md#rust-worker-optional).
+    command: [python, -m, buffdata.server.worker]
+    user: '${BUFFDATA_UID:-1000}:${BUFFDATA_GID:-1000}'
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs: ['/tmp:rw,noexec,nosuid,size=512m']
+    environment:
+      BUFFDATA_SERVER_URL: http://api:8000
+      BUFFDATA_WORKER_PROJECT: team
+      BUFFDATA_WORKER_TOKEN_FILE: /run/secrets/worker_token
+      BUFFDATA_ARTIFACT_ROOT: /data
+      BUFFDATA_PROVIDER_SECRETS_FILE: /run/secrets/provider_secrets
+      HTTPS_PROXY: http://egress:3128
+      HTTP_PROXY: http://egress:3128
+      NO_PROXY: api,localhost,127.0.0.1
+      HF_HUB_OFFLINE: '1'
+      TRANSFORMERS_OFFLINE: '1'
+      HF_HOME: /models
+    secrets: [worker_token, provider_secrets]
+    volumes:
+      - ./team/data/team:/data/team
+      - ./team/models:/models:ro
+    networks: [control]
+    mem_limit: 8g
+    cpus: 2
+    pids_limit: 256
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:17@sha256:67f41722b7a8cbdb868a44a4995c846eddfdc2973bccb291ce937dce88ad5675
+    environment:
+      POSTGRES_USER: buffdata
+      POSTGRES_DB: buffdata
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets: [postgres_password]
+    volumes: [metadata:/var/lib/postgresql/data]
+    networks: [database]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U buffdata -d buffdata']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  egress:
+    image: ubuntu/squid:latest@sha256:6a097f68bae708cedbabd6188d68c7e2e7a38cedd05a176e1cc0ba29e3bbe029
+    volumes: ['./squid.conf:/etc/squid/squid.conf:ro']
+    networks: [control, outbound]
+    restart: unless-stopped
+
+networks:
+  control:
+    internal: true
+  database:
+    internal: true
+  outbound: {}
+  edge: {}
+volumes:
+  metadata: {}
+secrets:
+  database_url:
+    file: ./team/secrets/database_url
+  postgres_password:
+    file: ./team/secrets/postgres_password
+  worker_token:
+    file: ./team/secrets/worker_token
+  provider_secrets:
+    file: ./team/secrets/provider_secrets.json
+  oidc_client_secret:
+    file: ./team/secrets/oidc_client_secret

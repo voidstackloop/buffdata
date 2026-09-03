@@ -39,7 +39,7 @@ from benchmark_buffdata import (  # noqa: E402
     write_jsonl,
 )
 
-SCALES = [10_000, 25_000, 50_000]
+SCALES = [10_000, 20_000, 30_000]
 TEST_ROWS = 2_000
 
 
@@ -47,51 +47,194 @@ def _joined(*parts: str | None) -> str:
     return "\n\n".join(part.strip() for part in parts if part and part.strip())
 
 
+def _pair(col1: str, col2: str):
+    return lambda row: {"text": _joined(row.get(col1), row.get(col2)), "label": row["label"]}
+
+
+def _single(col: str = "text", label_col: str = "label"):
+    return lambda row: {"text": row[col], "label": row[label_col]}
+
+
+# Verified for real against the HF Hub (buffdata/../_verify_datasets.py): schema, split
+# size (>=10k train rows), and actual class cardinality (many HF dataset cards understate
+# or omit this -- e.g. hate_speech18 and hate_speech_offensive looked binary from their
+# names but are genuinely 4-class and 3-class respectively, confirmed by sampling real
+# label values, not by trusting metadata alone). Near-duplicate re-hosts of the same
+# underlying corpus under a different HF namespace (SetFit/ag_news vs fancyzhx/ag_news,
+# SetFit/emotion vs dair-ai/emotion, etc.) are deliberately NOT double-counted here --
+# each entry below is a genuinely distinct source corpus.
 DATASETS: dict[str, dict[str, Any]] = {
-    "ag_news": {
-        "hf_id": "fancyzhx/ag_news",
-        "classes": 4,
-        "description": "AG News topic classification (4 classes)",
-        "normalize": lambda row: {"text": row["text"], "label": row["label"]},
-    },
-    "dbpedia_14": {
-        "hf_id": "fancyzhx/dbpedia_14",
-        "classes": 14,
-        "description": "DBpedia ontology classification (14 classes)",
-        "normalize": lambda row: {"text": _joined(row["title"], row["content"]), "label": row["label"]},
+    # --- binary (2 classes) ---
+    "imdb": {
+        "hf_id": "stanfordnlp/imdb", "classes": 2, "kind": "binary",
+        "description": "IMDB movie review sentiment",
+        "normalize": _single("text", "label"),
     },
     "yelp_polarity": {
-        "hf_id": "fancyzhx/yelp_polarity",
-        "classes": 2,
-        "description": "Yelp review sentiment polarity (2 classes)",
-        "normalize": lambda row: {"text": row["text"], "label": row["label"]},
+        "hf_id": "fancyzhx/yelp_polarity", "classes": 2, "kind": "binary",
+        "description": "Yelp review sentiment polarity",
+        "normalize": _single("text", "label"),
     },
     "amazon_polarity": {
-        "hf_id": "fancyzhx/amazon_polarity",
-        "classes": 2,
-        "description": "Amazon review sentiment polarity (2 classes, different domain/scale than Yelp)",
-        "normalize": lambda row: {"text": _joined(row["title"], row["content"]), "label": row["label"]},
+        "hf_id": "fancyzhx/amazon_polarity", "classes": 2, "kind": "binary",
+        "description": "Amazon review sentiment polarity",
+        "normalize": _pair("title", "content"),
+    },
+    "sst2": {
+        "hf_id": "stanfordnlp/sst2", "classes": 2, "kind": "binary",
+        "description": "Stanford Sentiment Treebank v2, binary",
+        "normalize": _single("sentence", "label"),
+        # GLUE's real "test" split labels are hidden (-1 sentinel, for the official
+        # leaderboard) -- "validation" is the split with real labels. Confirmed by
+        # sampling actual label values, not assumed from the split name.
+        "eval_split": "validation",
+    },
+    "enron_spam": {
+        "hf_id": "SetFit/enron_spam", "classes": 2, "kind": "binary",
+        "description": "Enron email spam/ham",
+        "normalize": _single("text", "label"),
+    },
+    "toxic_conversations": {
+        "hf_id": "SetFit/toxic_conversations_50k", "classes": 2, "kind": "binary",
+        "description": "Jigsaw toxic conversation comments",
+        "normalize": _single("text", "label"),
+    },
+    "insincere_questions": {
+        "hf_id": "SetFit/insincere-questions", "classes": 2, "kind": "binary",
+        "description": "Quora insincere-question detection",
+        "normalize": _single("text", "label"),
+    },
+    "ade_corpus": {
+        "hf_id": "SetFit/ade_corpus_v2_classification", "classes": 2, "kind": "binary",
+        "description": "Adverse Drug Event mention detection in medical text",
+        "normalize": _single("text", "label"),
+    },
+    "qqp": {
+        "hf_id": "SetFit/qqp", "classes": 2, "kind": "binary",
+        "description": "Quora Question Pairs duplicate detection",
+        "normalize": _pair("text1", "text2"),
+        "eval_split": "validation",  # "test" labels are GLUE's hidden -1 sentinel
+    },
+    "qnli": {
+        "hf_id": "SetFit/qnli", "classes": 2, "kind": "binary",
+        "description": "Question-answering NLI entailment",
+        "normalize": _pair("text1", "text2"),
+        "eval_split": "validation",  # "test" labels are GLUE's hidden -1 sentinel
+    },
+
+    # --- multi-class (>2 classes, single label per row) ---
+    "ag_news": {
+        "hf_id": "fancyzhx/ag_news", "classes": 4, "kind": "multiclass",
+        "description": "AG News topic classification",
+        "normalize": _single("text", "label"),
+    },
+    "dbpedia_14": {
+        "hf_id": "fancyzhx/dbpedia_14", "classes": 14, "kind": "multiclass",
+        "description": "DBpedia ontology classification",
+        "normalize": _pair("title", "content"),
     },
     "yahoo_answers_topics": {
-        "hf_id": "community-datasets/yahoo_answers_topics",
-        "classes": 10,
-        "description": "Yahoo! Answers topic classification (10 classes, noisy user-generated Q&A)",
+        "hf_id": "community-datasets/yahoo_answers_topics", "classes": 10, "kind": "multiclass",
+        "description": "Yahoo! Answers topic classification, noisy user-generated Q&A",
         "normalize": lambda row: {
             "text": _joined(row.get("question_title"), row.get("question_content"), row.get("best_answer")),
             "label": row["topic"],
         },
     },
+    "emotion": {
+        "hf_id": "dair-ai/emotion", "classes": 6, "kind": "multiclass",
+        "description": "Twitter emotion classification",
+        "normalize": _single("text", "label"),
+    },
+    "newsgroups_20": {
+        "hf_id": "SetFit/20_newsgroups", "classes": 20, "kind": "multiclass",
+        "description": "20 Newsgroups topic classification",
+        "normalize": _single("text", "label"),
+    },
+    "yelp_review_full": {
+        "hf_id": "SetFit/yelp_review_full", "classes": 5, "kind": "multiclass",
+        "description": "Yelp review star rating (1-5)",
+        "normalize": _single("text", "label"),
+    },
+    "student_questions": {
+        "hf_id": "SetFit/student-question-categories", "classes": 4, "kind": "multiclass",
+        "description": "Student question subject-area categories",
+        "normalize": _single("text", "label"),
+    },
+    "amazon_massive_scenario": {
+        # classes verified against the FULL train+test label set (benchmarks/_verify_true_classes.py),
+        # not a partial sample -- a 3000-row sample only showed 14 of the real 18 classes.
+        "hf_id": "SetFit/amazon_massive_scenario_en-US", "classes": 18, "kind": "multiclass",
+        "description": "Amazon MASSIVE assistant-query scenario classification (English)",
+        "normalize": _single("text", "label"),
+    },
+    "amazon_massive_intent": {
+        # same caution: a partial sample showed 39 of the real 60 classes.
+        "hf_id": "SetFit/amazon_massive_intent_en-US", "classes": 60, "kind": "multiclass",
+        "description": "Amazon MASSIVE assistant-query intent classification (English) -- same corpus as amazon_massive_scenario, a genuinely different label task",
+        "normalize": _single("text", "label"),
+    },
+    "amazon_reviews_multi_en": {
+        "hf_id": "SetFit/amazon_reviews_multi_en", "classes": 5, "kind": "multiclass",
+        "description": "Amazon multilingual reviews, English subset, star rating",
+        "normalize": _single("text", "label"),
+    },
+    "xglue_news": {
+        "hf_id": "SetFit/xglue_nc", "classes": 10, "kind": "multiclass",
+        "description": "XGLUE news classification",
+        "normalize": _single("text", "label"),
+    },
+    "tweet_sentiment_extraction": {
+        "hf_id": "mteb/tweet_sentiment_extraction", "classes": 3, "kind": "multiclass",
+        "description": "Tweet sentiment (negative/neutral/positive)",
+        "normalize": _single("text", "label"),
+    },
+    "tweet_sentiment": {
+        "hf_id": "cardiffnlp/tweet_eval", "hf_config": "sentiment", "classes": 3, "kind": "multiclass",
+        "description": "Tweet sentiment, TweetEval benchmark (distinct corpus from tweet_sentiment_extraction)",
+        "normalize": _single("text", "label"),
+    },
+    "tweet_emoji": {
+        "hf_id": "cardiffnlp/tweet_eval", "hf_config": "emoji", "classes": 20, "kind": "multiclass",
+        "description": "Tweet-to-emoji prediction",
+        "normalize": _single("text", "label"),
+    },
+    "hate_speech_offensive": {
+        "hf_id": "SetFit/hate_speech_offensive", "classes": 3, "kind": "multiclass",
+        "description": "Hate/offensive/neither tweet classification (3-class, confirmed by sampling)",
+        "normalize": _single("text", "label"),
+    },
+    "clinc_oos": {
+        "hf_id": "clinc/clinc_oos", "hf_config": "plus", "classes": 151, "kind": "multiclass",
+        "description": "CLINC150 intent classification plus out-of-scope queries",
+        "normalize": _single("text", "intent"),
+    },
+    "mnli": {
+        "hf_id": "SetFit/mnli", "classes": 3, "kind": "multiclass",
+        "description": "MultiNLI entailment/neutral/contradiction",
+        "normalize": _pair("text1", "text2"),
+        "eval_split": "validation",  # "test" labels are GLUE's hidden -1 sentinel
+    },
+}
+
+MULTILABEL_DATASETS: dict[str, dict[str, Any]] = {
+    # Populated separately once the multi-label training/injection engine exists --
+    # see benchmark_multilabel_matrix.py. Real, verified candidates already identified:
+    # go_emotions (simplified + raw), civil_comments, PubMed MeSH, Jigsaw toxicity
+    # (Arsive), lex_glue/eurlex -- 6 datasets, most needing a one-hot-columns-to-label-list
+    # transform this dict's plain per-row normalize lambdas don't support yet.
 }
 
 
 def load_normalized(spec: dict[str, Any]):
     from datasets import load_dataset
 
-    source = load_dataset(spec["hf_id"])
+    source = load_dataset(spec["hf_id"], spec["hf_config"]) if spec.get("hf_config") else load_dataset(spec["hf_id"])
     fn: Callable[[dict], dict] = spec["normalize"]
     normalize_row = lambda row: fn(row)  # noqa: E731
+    eval_split_name = spec.get("eval_split", "test")
     train = source["train"].map(normalize_row, remove_columns=source["train"].column_names)
-    test = source["test"].map(normalize_row, remove_columns=source["test"].column_names)
+    test = source[eval_split_name].map(normalize_row, remove_columns=source[eval_split_name].column_names)
     return train, test
 
 
@@ -252,6 +395,7 @@ async def main(args: argparse.Namespace) -> None:
         "results": [],
     }
 
+    skipped: list[dict[str, Any]] = []
     selected = args.datasets or list(DATASETS)
     for dataset_offset, name in enumerate(selected):
         spec = DATASETS[name]
@@ -259,10 +403,22 @@ async def main(args: argparse.Namespace) -> None:
         train_split, test_split = load_normalized(spec)
         for scale in (args.scales or SCALES):
             started = time.perf_counter()
-            combo = await run_combo(
-                name, spec, scale, args.seeds, args.epochs, train_split, test_split, dataset_offset,
-                gemini_audit_rows=args.gemini_audit_rows, gemini_model=args.gemini_model,
-            )
+            try:
+                combo = await run_combo(
+                    name, spec, scale, args.seeds, args.epochs, train_split, test_split, dataset_offset,
+                    gemini_audit_rows=args.gemini_audit_rows, gemini_model=args.gemini_model,
+                )
+            except ValueError as exc:
+                # A real dataset can be smaller than a requested scale, or too
+                # class-imbalanced to support a balanced sample at that size --
+                # stratified_rows raises ValueError rather than silently upsampling or
+                # returning a smaller-than-requested result. Skip just this one
+                # combination and keep the rest of the run going rather than losing
+                # hours of already-completed work over one dataset@scale that doesn't fit.
+                print(f"  [{name} @ {scale}] SKIPPED -- {exc}", flush=True)
+                skipped.append({"dataset": name, "scale": scale, "reason": str(exc)})
+                (output_dir / "skipped.json").write_text(json.dumps(skipped, indent=2), encoding="utf-8")
+                continue
             payload["results"].append(combo)
             results_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
             report_path.write_text(markdown_report(payload), encoding="utf-8")
@@ -270,6 +426,8 @@ async def main(args: argparse.Namespace) -> None:
 
     print(f"Results: {results_path}")
     print(f"Report:  {report_path}")
+    if skipped:
+        print(f"Skipped {len(skipped)} dataset@scale combination(s) that didn't fit -- see {output_dir / 'skipped.json'}")
 
 
 if __name__ == "__main__":

@@ -188,7 +188,7 @@ def test_verify_bearer_token_rejects_missing_actor_claim(keypair):
         headers={"kid": KID},
     )
 
-    with pytest.raises(OIDCVerificationError, match="actor identity"):
+    with pytest.raises(OIDCVerificationError, match="sub"):
         verify_bearer_token(token, config=_config(jwks))
 
 
@@ -231,11 +231,11 @@ def test_jwks_url_is_fetched_and_cached(monkeypatch, keypair):
         def __exit__(self, *args):
             return False
 
-        def read(self):
+        def read(self, size=-1):
             fetch_calls.append(1)
             return json.dumps(jwks).encode("utf-8")
 
-    monkeypatch.setattr(oidc_module.urllib.request, "urlopen", lambda url, timeout=10: _FakeResponse())
+    monkeypatch.setattr(oidc_module, "_fetch_jwks", lambda url: _FakeResponse())
     oidc_module._jwks_cache.clear()
 
     config = OIDCConfig(issuer=ISSUER, audience=AUDIENCE, jwks_url="https://issuer.example.com/jwks.json", jwks_cache_seconds=300)
@@ -259,19 +259,23 @@ def test_jwks_url_is_refetched_after_ttl_expires(monkeypatch, keypair):
         def __exit__(self, *args):
             return False
 
-        def read(self):
+        def read(self, size=-1):
             fetch_calls.append(1)
             return json.dumps(jwks).encode("utf-8")
 
-    monkeypatch.setattr(oidc_module.urllib.request, "urlopen", lambda url, timeout=10: _FakeResponse())
+    monkeypatch.setattr(oidc_module, "_fetch_jwks", lambda url: _FakeResponse())
     oidc_module._jwks_cache.clear()
 
-    config = OIDCConfig(issuer=ISSUER, audience=AUDIENCE, jwks_url="https://issuer.example.com/jwks.json", jwks_cache_seconds=0)
+    config = OIDCConfig(issuer=ISSUER, audience=AUDIENCE, jwks_url="https://issuer.example.com/jwks.json", jwks_cache_seconds=1)
 
     verify_bearer_token(token, config=config)
+    url = config.jwks_url
+    timestamp, cached = oidc_module._jwks_cache._entries[url]
+    oidc_module._jwks_cache._entries[url] = (timestamp - 2, cached)
+    oidc_module._jwks_cache._attempts[url] -= 2
     verify_bearer_token(token, config=config)
 
-    assert len(fetch_calls) == 2  # ttl_seconds=0 means every call refetches
+    assert len(fetch_calls) == 2
     oidc_module._jwks_cache.clear()
 
 
@@ -282,11 +286,53 @@ def test_jwks_fetch_failure_raises_a_clear_error(monkeypatch, keypair):
     def _boom(url, timeout=10):
         raise OSError("connection refused")
 
-    monkeypatch.setattr(oidc_module.urllib.request, "urlopen", _boom)
+    monkeypatch.setattr(oidc_module, "_fetch_jwks", _boom)
     oidc_module._jwks_cache.clear()
 
     config = OIDCConfig(issuer=ISSUER, audience=AUDIENCE, jwks_url="https://issuer.example.com/jwks.json")
-
     with pytest.raises(OIDCVerificationError, match="Could not fetch JWKS"):
         verify_bearer_token(token, config=config)
     oidc_module._jwks_cache.clear()
+
+
+def test_oidc_algorithms_must_be_configured(keypair):
+    private, jwks = keypair
+    other = json.loads(json.dumps(jwks))
+    other["keys"][0]["alg"] = "RS512"
+    token = _make_token(private, algorithm="RS512")
+    with pytest.raises(OIDCVerificationError, match="not configured"):
+        verify_bearer_token(token, config=_config(other))
+    assert verify_bearer_token(token, config=_config(other, algorithms=["RS512"])).actor
+    with pytest.raises(ValueError):
+        _config(jwks, algorithms=["HS256"])
+
+
+def test_jwks_rotation_is_rate_limited(monkeypatch, keypair):
+    import io
+    private, jwks = keypair
+    rotated = json.loads(json.dumps(jwks))
+    rotated["keys"][0]["kid"] = "rotated"
+    calls = []
+    def fetch(url):
+        calls.append(url)
+        return io.BytesIO(json.dumps(jwks if len(calls) == 1 else rotated).encode())
+    monkeypatch.setattr(oidc_module, "_fetch_jwks", fetch)
+    oidc_module._jwks_cache.clear()
+    config = OIDCConfig(issuer=ISSUER, audience=AUDIENCE, jwks_url=ISSUER + "/keys")
+    verify_bearer_token(_make_token(private), config=config)
+    for _ in range(5):
+        with pytest.raises(OIDCVerificationError):
+            verify_bearer_token(_make_token(private, kid="random"), config=config)
+    assert len(calls) == 1
+    oidc_module._jwks_cache._attempts[config.jwks_url] -= 6
+    assert verify_bearer_token(_make_token(private, kid="rotated"), config=config).actor
+    assert len(calls) == 2
+    oidc_module._jwks_cache.clear()
+
+
+def test_jwks_rejects_redirects_and_unsafe_urls():
+    with pytest.raises(OIDCVerificationError, match="redirects"):
+        oidc_module._NoJWKSRedirect().redirect_request(None, None, 302, "", {}, "http://169.254.169.254")
+    for url in ("http://example.com/keys", "https://user:secret@example.com/keys", "file:///etc/passwd"):
+        with pytest.raises(ValueError):
+            OIDCConfig(issuer=ISSUER, audience=AUDIENCE, jwks_url=url)

@@ -1,4 +1,5 @@
 import json
+from html import escape
 from pathlib import Path
 from typing import Dict, List, Optional
 import numpy as np
@@ -71,12 +72,14 @@ class ReportGenerator:
 
     @classmethod
     def generate_html_report(cls, items: List[DatasetItem], output_file: Path, provider: str = "configured provider") -> Path:
+        provider = escape(provider, quote=True)
         stats = cls.compute_stats(items)
         sample_rows = items[:10]
 
         samples_html = ""
         for i, item in enumerate(sample_rows):
             p, r = item.get_prompt_and_response()
+            p, r = escape(p, quote=True), escape(r, quote=True)
             score_badge = ""
             if item.quality_score:
                 score = item.quality_score.overall_score
@@ -86,7 +89,7 @@ class ReportGenerator:
             samples_html += f"""
             <div class="sample-card">
                 <div class="sample-header">
-                    <strong>Sample #{i+1} (ID: {item.id})</strong>
+                    <strong>Sample #{i+1} (ID: {escape(str(item.id), quote=True)})</strong>
                     {score_badge}
                 </div>
                 <div class="prompt-box">

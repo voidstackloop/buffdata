@@ -55,6 +55,16 @@ with individual flag overrides, flags winning.
 | `scrub_pii` | `bool` | `True` | Local Presidio-based PII redaction before any content reaches a provider |
 | `classification_pii_mode` | `"identifiers" \| "all" \| "off"` | `"identifiers"` | For labeled classification: redact only high-confidence direct identifiers, every Presidio entity type, or nothing |
 
+`presidio-anonymizer` (the redaction half of Presidio; `presidio-analyzer`, detection, has no
+such conflict and is always installed) is not a base dependency -- see
+[dependency-release-blocker.md](dependency-release-blocker.md). Without it importable
+in-process *and* without `SecurityPolicy.presidio_anonymizer_python`/
+`BUFFDATA_PRESIDIO_ANONYMIZER_PYTHON` pointed at an isolated venv that has it, `scrub_pii`
+falls back to the deterministic regex patterns for common identifiers (email, phone, IP,
+credit card, API key) only -- broader entity types (names, locations, organizations) are not
+redacted by the fallback. `pip install buffdata[presidio-anonymizer]` for a single-process
+setup, or configure the isolated venv for the team deployment.
+
 ## Accuracy contract
 
 | Field | Type | Default | What it controls |

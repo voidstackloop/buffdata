@@ -193,6 +193,7 @@ def record_from_report(
         contract_name=contract_name,
         contract_passed=contract_passed,
         report_path=str(report_path),
+        metadata={"evidence_kind": "imported_report", "reconstructed_execution_history": False},
     )
     store.record(entry)
     return entry

@@ -6,6 +6,8 @@ import socket
 def is_safe_url(url: str) -> bool:
     """Validate URL to prevent SSRF and local file reads."""
     try:
+        from buffdata.security.policy import check_network_url
+        check_network_url(url, ordinary_import=True)
         parsed = urllib.parse.urlparse(url)
         if parsed.scheme not in ("http", "https"):
             return False
@@ -36,6 +38,10 @@ class SecretMasker:
     def mask(text: str) -> str:
         if not text:
             return text
+        text = re.sub(r'(?i)(bearer\s+)[^\s\"\'<>]+', r'\1[REDACTED]', text)
+        text = re.sub(r'(?:sk-(?:ant-|proj-)?|ctx7sk-|hf_|AIza)[A-Za-z0-9_-]{8,}', '[REDACTED]', text)
+        text = re.sub(r'eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+', '[REDACTED]', text)
+        text = re.sub(r'(?i)([?&](?:token|key|api_key|access_token|signature)=)[^&\s]+', r'\1[REDACTED]', text)
         # Mask anything that looks like a JWT or long alphanumeric token (very basic heuristic)
         # e.g., AIzaSy... (Google), hf_... (HuggingFace)
         text = re.sub(r'(AIza[0-9A-Za-z-_]{35})', 'AIza***MASKED***', text)

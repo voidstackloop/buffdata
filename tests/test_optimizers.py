@@ -69,3 +69,67 @@ def test_dedup_exact_and_minhash():
     kept, dropped = dedup.deduplicate_exact(items)
     assert len(kept) == 2
     assert len(dropped) == 1
+
+
+def test_dedup_minhash_drops_near_duplicates_above_threshold():
+    dedup = Deduplicator()
+    items = [
+        DatasetItem(id="1", format=DatasetFormat.ALPACA, instruction="the quick brown fox jumps over the lazy dog",
+                    output="a response"),
+        DatasetItem(id="2", format=DatasetFormat.ALPACA, instruction="the quick brown fox jumps over the lazy cat",
+                    output="a response"),
+        DatasetItem(id="3", format=DatasetFormat.ALPACA, instruction="completely unrelated text about astronomy",
+                    output="a response"),
+    ]
+    kept, dropped = dedup.deduplicate_minhash(items, threshold=0.5)
+    assert [item.id for item in kept] == ["1", "3"]
+    assert [item.id for item in dropped] == ["2"]
+    assert "minhash_near_dup" in dropped[0].metadata["dedup_reason"]
+
+
+def _reference_deduplicate_minhash(items, threshold=0.85, shingle_size=3):
+    """The pre-hashing implementation (raw shingle strings), kept only in this test as a
+    reference oracle for the hashed-fingerprint version now in dedup.py."""
+    def get_shingles(text):
+        words = text.lower().split()
+        if len(words) < shingle_size:
+            return set(words)
+        return set(" ".join(words[i:i + shingle_size]) for i in range(len(words) - shingle_size + 1))
+
+    shingle_sets, kept, dropped = [], [], []
+    for it in items:
+        prompt, response = it.get_prompt_and_response()
+        content = (f"{prompt} {response}".strip() or it.get_classification_text())
+        curr = get_shingles(content)
+        is_dup = False
+        for prev in shingle_sets:
+            union = len(curr | prev)
+            if union > 0 and len(curr & prev) / union >= threshold:
+                is_dup = True
+                break
+        if is_dup:
+            dropped.append(it.id)
+        else:
+            shingle_sets.append(curr)
+            kept.append(it.id)
+    return kept, dropped
+
+
+@pytest.mark.parametrize("threshold", [0.3, 0.5, 0.7, 0.85, 0.95])
+def test_dedup_minhash_hashed_shingles_match_string_reference(threshold):
+    import random
+    random.seed(42)
+    vocabulary = ["alpha", "beta", "gamma", "delta", "the", "quick", "fox", "dog", "cat",
+                  "jumps", "runs", "sits", "über", "café", "naïve", "a", "b"]
+    items = []
+    for i in range(60):
+        length = random.randint(1, 12)
+        text = " ".join(random.choice(vocabulary) for _ in range(length))
+        items.append(DatasetItem(id=str(i), format=DatasetFormat.RAW, text=text))
+
+    reference_kept, reference_dropped = _reference_deduplicate_minhash(
+        [it.model_copy(deep=True) for it in items], threshold=threshold)
+    actual_kept, actual_dropped = Deduplicator().deduplicate_minhash(items, threshold=threshold)
+
+    assert [it.id for it in actual_kept] == reference_kept
+    assert [it.id for it in actual_dropped] == reference_dropped

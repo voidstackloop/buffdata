@@ -1,5 +1,11 @@
 # Security
 
+The new [managed execution boundary](run-management.md) adds plugin approval, bounded
+input/network handling, escaped reports, verified manifests, and fail-closed provider
+exceptions. [Team deployment](team-deployment.md) adds OIDC project authorization and worker
+containment. The sections below describe the pre-existing local credential/file protections;
+the managed-run directory is additionally private from creation.
+
 Two independent protections, both on by default with zero configuration: where API
 keys live, and who on the local machine can read the files BuffData writes.
 
@@ -89,7 +95,11 @@ machine, not something the rest of the pipeline depends on for correctness.
   encryption key would have to be hardcoded (pointless) or become yet another secret
   the user has to manage (worse than the file-permission protection it would replace).
   File permissions are the standard mitigation for this exact scenario --
-  `~/.ssh/id_rsa` and `~/.aws/credentials` use the same approach, not encryption.
+  `~/.ssh/id_rsa` and `~/.aws/credentials` use the same approach, not encryption. That
+  reasoning doesn't carry over to the team deployment, which already has a real operator and
+  a secrets story -- see [team-deployment.md](team-deployment.md#encryption-at-rest-for-managed-artifacts)
+  for the opt-in encryption-at-rest option that exists there instead. This local-CLI story
+  is otherwise unchanged.
 - **The final output dataset** (`optimized.jsonl` and its `.rejected.jsonl`) is *not*
   permission-restricted -- it's the deliverable you explicitly asked BuffData to
   produce for downstream use (training, sharing, `buffdata push` to a Hub), and

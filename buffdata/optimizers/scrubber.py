@@ -8,6 +8,7 @@ from typing import Dict, List, Optional, Tuple
 
 from buffdata.models.schemas import ChatMessage, DatasetFormat, DatasetItem
 from buffdata.plugins import load_pii_recognizer_plugins
+from buffdata.security.policy import SecurityPolicy, presidio_anonymizer_python
 
 def _scrub_worker(
     items: List[DatasetItem],
@@ -56,14 +57,17 @@ class PIIScrubber:
             if self.entities is not None
             else None
         )
+        # analyzer (detection, presidio-analyzer -- no cryptography dependency, always
+        # installable) and _anonymize (redaction, presidio-anonymizer -- pulls in an
+        # older-pinned cryptography, so it may live in a separate isolated venv instead of
+        # in-process) are deliberately independent: a missing anonymizer must not also take
+        # down detection, and detection without any way to act on it must not happen at all
+        # (see the coupling check at the end of this method).
         self.analyzer = None
-        self.anonymizer = None
         try:
             from presidio_analyzer import AnalyzerEngine
-            from presidio_anonymizer import AnonymizerEngine
 
             self.analyzer = AnalyzerEngine()
-            self.anonymizer = AnonymizerEngine()
             for recognizer in load_pii_recognizer_plugins():
                 try:
                     self.analyzer.registry.add_recognizer(recognizer)
@@ -71,27 +75,68 @@ class PIIScrubber:
                     # A broken plugin recognizer must not disable PII scrubbing entirely.
                     pass
         except Exception:
-            # The fallback still guarantees local redaction for common identifiers.
-            pass
+            self.analyzer = None
+
+        self._anonymize = None  # Callable[[str, list[RecognizerResult]], str] | None
+        try:
+            from presidio_anonymizer import AnonymizerEngine
+            from presidio_anonymizer.entities import RecognizerResult as AnonymizerResult
+
+            engine = AnonymizerEngine()
+
+            def local_anonymize(text, findings):
+                return engine.anonymize(text=text, analyzer_results=[
+                    AnonymizerResult(entity_type=f.entity_type, start=f.start, end=f.end, score=f.score)
+                    for f in findings]).text
+
+            self._anonymize = local_anonymize
+        except Exception:
+            # presidio-anonymizer isn't importable in this process -- the expected case once
+            # it's split into its own venv (docs/dependency-release-blocker.md). Fall back to
+            # the isolated-venv sandbox if one's configured; regex-only redaction otherwise.
+            executable = presidio_anonymizer_python()
+            if executable:
+                self._anonymizer_sandbox = None
+                self._anonymizer_executable = executable
+                self._anonymize = self._sandboxed_anonymize
+        if self._anonymize is None:
+            # Detected-but-unredactable entities would otherwise report as redacted in
+            # item.metadata["pii"]["entity_counts"] while the raw text is untouched -- so
+            # detection without a way to act on it doesn't run at all. Same fallback shape as
+            # today: regex-only redaction for the fixed identifier patterns below.
+            self.analyzer = None
+
+    def _sandboxed_anonymize(self, text, findings):
+        if self._anonymizer_sandbox is None:
+            import atexit
+            from pathlib import Path
+            from buffdata.security.sandbox import PluginSandbox
+            worker_path = Path(__file__).resolve().parents[1] / "security" / "anonymizer_worker.py"
+            self._anonymizer_sandbox = PluginSandbox(SecurityPolicy(),
+                python_executable=self._anonymizer_executable, worker_argv=[str(worker_path)])
+            atexit.register(self._anonymizer_sandbox.close)
+        response = self._anonymizer_sandbox.call("anonymize", {"text": text,
+            "analyzer_results": [{"entity_type": f.entity_type, "start": f.start, "end": f.end, "score": f.score}
+                                 for f in findings]})
+        return response["text"]
 
     def scrub_text_with_audit(self, text: str) -> Tuple[str, Dict[str, int]]:
         if not text:
             return text, {}
         counts: Counter[str] = Counter()
         result = text
-        if (
-            self.analyzer is not None
-            and self.anonymizer is not None
-            and (self.presidio_entities is None or self.presidio_entities)
-        ):
+        if self.analyzer is not None and (self.presidio_entities is None or self.presidio_entities):
             try:
                 findings = self.analyzer.analyze(
                     text=text,
                     entities=self.presidio_entities or [],
                     language=self.language,
                 )
+                # Only recorded once redaction actually succeeds -- counts and the redacted
+                # text must never disagree about what was actually removed.
+                redacted = self._anonymize(text, findings)
                 counts.update(finding.entity_type for finding in findings)
-                result = self.anonymizer.anonymize(text=text, analyzer_results=findings).text
+                result = redacted
             except Exception:
                 result = text
         for entity, pattern in self._patterns.items():
@@ -160,7 +205,14 @@ class PIIScrubber:
 
         results = []
         worker_count = min(cpu_count, 4, len(chunks))
-        with concurrent.futures.ProcessPoolExecutor(max_workers=worker_count) as executor:
+        import multiprocessing
+        # spawn, not the platform default (fork on Linux): a fork duplicates every open file
+        # descriptor, including a live plugin-sandbox pipe if one is open in this process, and
+        # PEP 446's FD_CLOEXEC only takes effect across exec() -- which fork-mode
+        # multiprocessing never calls. Forked workers inheriting that pipe could corrupt its
+        # framing or reach the sandbox directly.
+        context = multiprocessing.get_context("spawn")
+        with concurrent.futures.ProcessPoolExecutor(max_workers=worker_count, mp_context=context) as executor:
             for chunk_res in executor.map(
                 _scrub_worker,
                 chunks,

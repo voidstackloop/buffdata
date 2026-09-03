@@ -1,0 +1,19 @@
+# Build-context allowlist: datasets, credentials, history and local caches stay out.
+**
+!pyproject.toml
+!README.md
+!buffdata/
+!buffdata/**
+!deploy/
+!deploy/Dockerfile.team
+!deploy/requirements-cpu.lock
+!rust-worker/
+!rust-worker/Cargo.toml
+!rust-worker/Cargo.lock
+!rust-worker/src/
+!rust-worker/src/**
+**/.env
+**/.env.*
+**/__pycache__
+**/*.pyc
+rust-worker/target/

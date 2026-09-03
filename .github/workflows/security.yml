@@ -1,0 +1,30 @@
+name: Security and compatibility
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  boundaries:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install '.[server,dev]' pip-audit keyrings.alt
+      - run: pytest -q tests/test_run_management.py tests/test_security_boundaries.py tests/test_team_server.py tests/test_adaptive_pipeline.py tests/test_accuracy_gate.py
+      - run: pip-audit
+      - run: buffdata sbom --output sbom.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dependency-sbom
+          path: sbom.json
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

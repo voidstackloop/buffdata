@@ -1,0 +1,30 @@
+root: /data
+# Overridden by BUFFDATA_DATABASE_URL_FILE in Compose, never commit a real password.
+database_url: postgresql+psycopg://configured-from-secret-file
+public_url: https://buffdata.example.com
+oidc:
+  issuer: https://identity.example.com
+  audience: buffdata-api
+  algorithms: [RS256]
+  jwks_url: https://identity.example.com/.well-known/jwks.json
+client_id: buffdata-browser
+authorization_url: https://identity.example.com/authorize
+token_url: https://identity.example.com/token
+client_secret_file: /run/secrets/oidc_client_secret
+projects:
+  team:
+    members:
+      REPLACE_WITH_OIDC_SUBJECT: administrator
+    worker_token_sha256: REPLACE_WITH_SHA256_OF_WORKER_TOKEN
+    # Optional: give two or more projects the SAME worker_token_sha256 AND the same
+    # worker_pool name to let one worker fleet serve all of them from a shared claim queue
+    # instead of one dedicated container per project -- see team-deployment.md#worker-pools.
+    # A shared token hash without a matching worker_pool on every member fails startup.
+    # worker_pool: teamx
+    policy:
+      approved_plugins: []
+      allowed_hosts: [generativelanguage.googleapis.com, api.openai.com, api.anthropic.com]
+      local_endpoints: []
+      execution_seconds: 21600
+      max_upload_bytes: 1073741824
+      max_expanded_bytes: 8589934592

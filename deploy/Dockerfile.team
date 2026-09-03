@@ -1,0 +1,44 @@
+# Optional: a Rust reimplementation of buffdata/server/worker.py's claim loop and process
+# supervisor (see rust-worker/README.md) -- not wired into CMD below, so building this image
+# is behaviorally unchanged unless you explicitly opt in (docs/team-deployment.md#rust-worker-optional).
+# Tag, not a pinned digest like the base image below: verify a real build before production use
+# and pin it the same way once you have.
+FROM rust:1.89-slim AS rust-worker-builder
+WORKDIR /build
+COPY rust-worker ./rust-worker
+RUN cd rust-worker && cargo build --release
+
+FROM python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
+WORKDIR /app
+COPY deploy/requirements-cpu.lock /tmp/requirements-cpu.lock
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-deps torch==2.13.0 --index-url https://download.pytorch.org/whl/cpu \
+    && pip install --no-deps -r /tmp/requirements-cpu.lock
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-deps https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.8.0/en_core_web_lg-3.8.0-py3-none-any.whl
+COPY pyproject.toml README.md ./
+COPY buffdata ./buffdata
+RUN pip install --no-cache-dir --no-deps --no-build-isolation '.[server]' \
+    && pip check
+
+# Isolated venv for presidio-anonymizer only (docs/dependency-release-blocker.md): its
+# cryptography<49.0.0 pin is why the main environment couldn't take the cryptography advisory
+# fix above until this was split out. No buffdata install in this venv at all --
+# buffdata/security/anonymizer_worker.py is a standalone script run by file path, never
+# `-m`, so it never imports (and doesn't need) anything from the main package.
+COPY deploy/requirements-presidio.lock /tmp/requirements-presidio.lock
+RUN python -m venv /opt/venv-presidio
+RUN --mount=type=cache,target=/root/.cache/pip \
+    /opt/venv-presidio/bin/pip install --no-deps -r /tmp/requirements-presidio.lock \
+    && chmod -R a+rX /opt/venv-presidio
+
+COPY --from=rust-worker-builder /build/rust-worker/target/release/buffdata-worker /usr/local/bin/buffdata-worker
+
+RUN groupadd --gid 1000 buffdata && useradd --uid 1000 --gid 1000 --create-home buffdata
+USER 1000:1000
+WORKDIR /data
+# Default worker command still runs the Python implementation -- override it in Compose to
+# `[buffdata-worker]` to use the Rust one instead; both speak the identical claim/heartbeat/
+# finish protocol. See docs/team-deployment.md#rust-worker-optional.
+CMD ["uvicorn", "buffdata.server.app:from_environment", "--factory", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]

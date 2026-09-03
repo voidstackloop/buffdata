@@ -118,6 +118,8 @@ def _cloud_storage_options(url: str) -> dict[str, Any]:
 
 
 def _open_fsspec(url: str, mode: str):
+    from buffdata.security.policy import check_cloud
+    check_cloud(url)
     try:
         import fsspec
     except ImportError as exc:
@@ -270,6 +272,8 @@ def read_dataset(file_path: Union[str, Path], max_rows: Optional[int] = None) ->
     if _is_cloud_url(file_path):
         return _read_dataset_cloud(file_path, max_rows)
     path = Path(file_path)
+    from buffdata.security.policy import check_input
+    check_input(path)
     if not path.exists():
         raise FileNotFoundError(f"Dataset path not found: {path}")
     dataset_format = _path_format(path)
@@ -415,6 +419,9 @@ def write_dataset(
     file_path: Union[str, Path],
     format_override: Optional[str] = None,
 ) -> None:
+    from buffdata.security.policy import check_path
+    if not _is_cloud_url(file_path):
+        check_path(file_path, write=True)
     if _is_cloud_url(file_path):
         return _write_dataset_cloud(items, file_path, format_override)
     path = Path(file_path)

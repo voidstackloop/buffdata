@@ -1,0 +1,22 @@
+[package]
+name = "buffdata-worker"
+version = "0.1.0"
+edition = "2021"
+description = "Claim-loop worker for BuffData managed runs: polls /internal/worker/claim, supervises the buffdata.runs.executor subprocess, reports heartbeat/finish. A drop-in replacement for buffdata/server/worker.py."
+
+[[bin]]
+name = "buffdata-worker"
+path = "src/main.rs"
+
+[dependencies]
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[profile.release]
+opt-level = "z"
+lto = true
+strip = true

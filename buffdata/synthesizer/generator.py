@@ -11,6 +11,8 @@ class SyntheticDataset(BaseModel):
     items: List[SyntheticQA] = Field(description="List of extracted QA pairs.")
 
 async def extract_text_from_pdf(pdf_path: str) -> str:
+    from buffdata.security.policy import check_input
+    check_input(pdf_path)
     import fitz # PyMuPDF
     doc = fitz.open(pdf_path)
     text = ""
@@ -19,17 +21,9 @@ async def extract_text_from_pdf(pdf_path: str) -> str:
     return text
 
 async def extract_text_from_url(url: str) -> str:
-    import aiohttp
     from bs4 import BeautifulSoup
-    from buffdata.security.validator import is_safe_url
-    
-    if not is_safe_url(url):
-        raise ValueError(f"Security Policy Violation: URL is not safe or allowed: {url}")
-        
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url, headers={'User-Agent': 'Mozilla/5.0 BuffData/2.0'}) as response:
-            response.raise_for_status()
-            html = await response.text()
+    from buffdata.security.network import fetch_public
+    html = (await fetch_public(url)).decode("utf-8", errors="replace")
             
     soup = BeautifulSoup(html, 'html.parser')
     return soup.get_text(separator=' ', strip=True)

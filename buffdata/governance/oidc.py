@@ -18,13 +18,15 @@ already trusts.
 from __future__ import annotations
 
 import json
+import threading
 import time
 import urllib.request
+from urllib.parse import urlsplit
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, Union
 
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 if TYPE_CHECKING:
     import jwt
@@ -54,8 +56,26 @@ class OIDCConfig(BaseModel):
     # jwks_url in production so key rotation on the IdP's side is picked up automatically.
     jwks: Optional[dict[str, Any]] = None
     actor_claim: str = "sub"
-    jwks_cache_seconds: int = 300
-    leeway_seconds: float = 0
+    algorithms: list[str] = Field(default_factory=lambda: ["RS256"], min_length=1)
+    jwks_cache_seconds: int = Field(300, ge=1, le=3600)
+    jwks_refresh_seconds: int = Field(5, ge=1, le=60)
+    leeway_seconds: float = Field(0, ge=0, le=60)
+
+    @field_validator("algorithms")
+    @classmethod
+    def signing_algorithms(cls, value):
+        if not set(value) <= _ALLOWED_ALGORITHMS:
+            raise ValueError("Only explicitly approved asymmetric signing algorithms are supported")
+        return value
+
+    @field_validator("jwks_url")
+    @classmethod
+    def jwks_transport(cls, value):
+        if value is not None:
+            p = urlsplit(value)
+            if p.scheme != "https" or not p.hostname or p.username or p.password or p.fragment:
+                raise ValueError("JWKS requires a credential-free HTTPS URL")
+        return value
 
     @classmethod
     def from_yaml(cls, path: Union[str, Path]) -> "OIDCConfig":
@@ -75,22 +95,50 @@ class _JWKSCache:
 
     def __init__(self) -> None:
         self._entries: dict[str, tuple[float, dict[str, Any]]] = {}
+        self._attempts: dict[str, float] = {}
+        self._lock = threading.Lock()
 
-    def get(self, url: str, ttl_seconds: int) -> dict[str, Any]:
-        now = time.monotonic()
-        cached = self._entries.get(url)
-        if cached is not None and (now - cached[0]) < ttl_seconds:
-            return cached[1]
-        try:
-            with urllib.request.urlopen(url, timeout=10) as response:
-                data = json.loads(response.read().decode("utf-8"))
-        except (OSError, ValueError) as exc:
-            raise OIDCVerificationError(f"Could not fetch JWKS from {url}: {exc}") from exc
-        self._entries[url] = (now, data)
-        return data
+    def get(self, url: str, ttl_seconds: int, *, refresh=False, refresh_seconds=5) -> dict[str, Any]:
+        # Single-flight fetches, including failed fetches and unknown-key requests. An
+        # attacker sending random kids cannot turn each API request into an IdP fetch.
+        with self._lock:
+            now = time.monotonic()
+            cached = self._entries.get(url)
+            if not refresh and cached is not None and now - cached[0] < ttl_seconds:
+                return cached[1]
+            if now - self._attempts.get(url, float("-inf")) < min(ttl_seconds, refresh_seconds):
+                if cached is not None and now - cached[0] < ttl_seconds:
+                    return cached[1]
+                raise OIDCVerificationError("Could not fetch JWKS: refresh cooldown is active")
+            self._attempts[url] = now
+            try:
+                with _fetch_jwks(url) as response:
+                    body = response.read(1024 * 1024 + 1)
+                    if len(body) > 1024 * 1024:
+                        raise ValueError("JWKS exceeds size limit")
+                    data = json.loads(body.decode("utf-8"))
+                    if not isinstance(data, dict) or not isinstance(data.get("keys"), list) or not all(
+                        isinstance(key, dict) for key in data["keys"]):
+                        raise ValueError("Invalid JWKS shape")
+            except (OSError, ValueError):
+                raise OIDCVerificationError("Could not fetch JWKS from the configured identity provider") from None
+            self._entries[url] = (now, data)
+            return data
 
     def clear(self) -> None:
-        self._entries.clear()
+        with self._lock:
+            self._entries.clear()
+            self._attempts.clear()
+
+
+class _NoJWKSRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, request, fp, code, message, headers, new_url):
+        raise OIDCVerificationError("JWKS redirects are forbidden; configure the final HTTPS endpoint")
+
+
+def _fetch_jwks(url):
+    # Administrator-configured IdP may be private. Never follow it to another trust domain.
+    return urllib.request.build_opener(_NoJWKSRedirect()).open(url, timeout=10)
 
 
 _jwks_cache = _JWKSCache()
@@ -101,7 +149,7 @@ def _resolve_jwks(config: OIDCConfig) -> dict[str, Any]:
         return config.jwks
     if config.jwks_url is None:
         raise OIDCVerificationError("OIDC config must set either 'jwks' (static) or 'jwks_url'.")
-    return _jwks_cache.get(config.jwks_url, config.jwks_cache_seconds)
+    return _jwks_cache.get(config.jwks_url, config.jwks_cache_seconds, refresh_seconds=config.jwks_refresh_seconds)
 
 
 def verify_bearer_token(token: str, *, config: OIDCConfig) -> OIDCIdentity:
@@ -122,15 +170,21 @@ def verify_bearer_token(token: str, *, config: OIDCConfig) -> OIDCIdentity:
         raise OIDCVerificationError(f"Malformed bearer token: {exc}") from exc
 
     kid = header.get("kid")
+    if header.get("alg") not in config.algorithms:
+        raise OIDCVerificationError("Token signing algorithm is not configured")
     jwks = _resolve_jwks(config)
     candidates = [key for key in jwks.get("keys", []) if kid is None or key.get("kid") == kid]
+    if not candidates and config.jwks is None and config.jwks_url:
+        jwks = _jwks_cache.get(config.jwks_url, config.jwks_cache_seconds,
+            refresh=True, refresh_seconds=config.jwks_refresh_seconds)
+        candidates = [key for key in jwks.get("keys", []) if kid is None or key.get("kid") == kid]
     if not candidates:
         raise OIDCVerificationError(f"No JWKS key found for kid={kid!r} (issuer {config.issuer!r}).")
 
     last_error: Optional[Exception] = None
     for jwk in candidates:
         algorithm = jwk.get("alg", "RS256")
-        if algorithm not in _ALLOWED_ALGORITHMS:
+        if algorithm not in config.algorithms or jwk.get("use", "sig") != "sig" or "verify" not in jwk.get("key_ops", ["verify"]):
             last_error = OIDCVerificationError(f"JWKS key algorithm {algorithm!r} is not an allowed signing algorithm.")
             continue
         try:
@@ -142,12 +196,13 @@ def verify_bearer_token(token: str, *, config: OIDCConfig) -> OIDCIdentity:
                 audience=config.audience,
                 issuer=config.issuer,
                 leeway=config.leeway_seconds,
+                options={"require": ["exp", "iss", "aud", "sub"]},
             )
         except jwt.PyJWTError as exc:
             last_error = exc
             continue
         actor = claims.get(config.actor_claim)
-        if not actor:
+        if not isinstance(actor, str) or not actor.strip():
             raise OIDCVerificationError(
                 f"Verified token has no usable '{config.actor_claim}' claim to use as the actor identity."
             )
