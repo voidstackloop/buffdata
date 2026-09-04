@@ -26,6 +26,7 @@ from torch.utils.data import DataLoader, Dataset
 
 from buffdata.engine.pipeline import OptimizationPipeline
 from buffdata.models.schemas import DatasetItem, PipelineConfig
+from benchmark_buffdata import summarize_data_hygiene
 
 TOKEN_RE = re.compile(r"[A-Za-z0-9_']+")
 
@@ -65,6 +66,19 @@ def stratified_rows_multilabel(
     return all_rows[:count]
 
 
+DEFECT_CLEAN = "clean"
+DEFECT_CONFLICT = "conflicting_duplicate"
+DEFECT_SKEW = "class_skew_duplicate"
+DEFECT_EMPTY = "empty"
+
+
+def _tag_defect(row: dict[str, Any], category: str) -> dict[str, Any]:
+    """Stamp a row with which defect category it was injected as -- see
+    benchmark_buffdata._tag_defect for why this survives the whole pipeline run."""
+    row["_buffdata_metadata"] = {"defect_category": category}
+    return row
+
+
 def make_dirty_multilabel(
     clean: list[dict[str, Any]], num_labels: int, seed: int,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, int]]:
@@ -92,15 +106,16 @@ def make_dirty_multilabel(
             labels.discard(toggle)
         else:
             labels.add(toggle)
-        extras.append({"text": row["text"], "label": sorted(labels)})
+        extras.append(_tag_defect({"text": row["text"], "label": sorted(labels)}, DEFECT_CONFLICT))
 
     for _ in range(skew_count):
-        extras.append(dict(rng.choice(clean)))
+        extras.append(_tag_defect(dict(rng.choice(clean)), DEFECT_SKEW))
 
     for _ in range(empty_count):
-        extras.append({"text": "", "label": []})
+        extras.append(_tag_defect({"text": "", "label": []}, DEFECT_EMPTY))
 
-    optimizer_input = [dict(row) for row in clean] + [dict(row) for row in extras]
+    clean_tagged = [_tag_defect(dict(row), DEFECT_CLEAN) for row in clean]
+    optimizer_input = clean_tagged + [dict(row) for row in extras]
     dirty = [dict(row) for row in optimizer_input]
     rng.shuffle(dirty)
     return dirty, optimizer_input, {
@@ -110,6 +125,34 @@ def make_dirty_multilabel(
     }
 
 
+def summarize_defect_breakdown_multilabel(
+    accepted: list[DatasetItem], rejected: list[DatasetItem]
+) -> dict[str, dict[str, Any]]:
+    """Cross-tabulate each injected defect category against what a real
+    optimize_multilabel() run actually did with it -- input/retained/lost counts, plus
+    which exact pipeline stage caught each lost row."""
+    breakdown: dict[str, dict[str, Any]] = {}
+
+    def bucket(category: str) -> dict[str, Any]:
+        return breakdown.setdefault(
+            category, {"input": 0, "retained": 0, "lost": 0, "lost_by_stage": {}}
+        )
+
+    for item in accepted:
+        entry = bucket(item.metadata.get("defect_category", "untagged"))
+        entry["input"] += 1
+        entry["retained"] += 1
+
+    for item in rejected:
+        entry = bucket(item.metadata.get("defect_category", "untagged"))
+        entry["input"] += 1
+        entry["lost"] += 1
+        stage = item.metadata.get("rejection", {}).get("stage", "unknown")
+        entry["lost_by_stage"][stage] = entry["lost_by_stage"].get(stage, 0) + 1
+
+    return breakdown
+
+
 async def optimize_multilabel(
     rows: list[dict[str, Any]],
     *,
@@ -117,6 +160,8 @@ async def optimize_multilabel(
     gemini_model: str = "gemini-3.5-flash-lite",
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     items = [DatasetItem.from_dict(row) for row in rows]
+    for item in items:
+        item.metadata.setdefault("defect_category", DEFECT_CLEAN)
     config = PipelineConfig(
         provider="gemini",
         model=gemini_model,
@@ -140,6 +185,8 @@ async def optimize_multilabel(
         "provider": result.metrics["provider"],
         "model": result.metrics["model"],
         "usage": result.metrics["usage"],
+        "defect_breakdown": summarize_defect_breakdown_multilabel(result.accepted, result.rejected),
+        "hygiene": summarize_data_hygiene(rows, result.accepted, result.rejected),
     }
     return output, quality
 

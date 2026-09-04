@@ -30,6 +30,8 @@ from typing import Any, Callable
 
 sys.path.insert(0, str(Path(__file__).parent))
 from benchmark_buffdata import (  # noqa: E402
+    DEFECT_CLEAN,
+    available_row_count,
     build_vocab,
     make_dirty,
     optimize,
@@ -173,6 +175,10 @@ DATASETS: dict[str, dict[str, Any]] = {
         "hf_id": "SetFit/amazon_massive_intent_en-US", "classes": 60, "kind": "multiclass",
         "description": "Amazon MASSIVE assistant-query intent classification (English) -- same corpus as amazon_massive_scenario, a genuinely different label task",
         "normalize": _single("text", "label"),
+        # The train split contains 59 of the declared 60 labels. Balanced sampling
+        # cannot invent the missing class, so use deterministic random sampling and
+        # retain the 60-way output space for evaluation.
+        "sampling": "random",
     },
     "amazon_reviews_multi_en": {
         "hf_id": "SetFit/amazon_reviews_multi_en", "classes": 5, "kind": "multiclass",
@@ -251,8 +257,24 @@ async def run_combo(
     gemini_model: str = "gemini-3.5-flash-lite",
 ) -> dict[str, Any]:
     classes = spec["classes"]
-    clean_train = stratified_rows(train_split, scale, classes, ["text"], 100 + dataset_offset, "balanced")
-    clean_test = stratified_rows(test_split, min(TEST_ROWS, len(test_split)), classes, ["text"], 200 + dataset_offset, "balanced")
+    sampling = spec.get("sampling", "balanced")
+    effective_train_rows = available_row_count(train_split, scale, classes, sampling)
+    effective_test_rows = available_row_count(
+        test_split, min(TEST_ROWS, len(test_split)), classes, sampling
+    )
+    if effective_train_rows < scale or effective_test_rows < min(TEST_ROWS, len(test_split)):
+        print(
+            f"  [{dataset_name} @ {scale}] {sampling} cap: "
+            f"train={effective_train_rows:,}/{scale:,}, "
+            f"test={effective_test_rows:,}/{min(TEST_ROWS, len(test_split)):,}",
+            flush=True,
+        )
+    clean_train = stratified_rows(
+        train_split, effective_train_rows, classes, ["text"], 100 + dataset_offset, sampling
+    )
+    clean_test = stratified_rows(
+        test_split, effective_test_rows, classes, ["text"], 200 + dataset_offset, sampling
+    )
     dirty_raw, optimizer_input, defects = make_dirty(clean_train, classes, 300 + dataset_offset)
 
     clean_optimized, clean_quality = await optimize(clean_train)
@@ -314,6 +336,8 @@ async def run_combo(
         "rejected_rows": dirty_quality["rejected_rows"],
         "validate": dirty_quality["stages"].get("validate"),
         "dedup": dirty_quality["stages"].get("dedup"),
+        "defect_breakdown": dirty_quality.get("defect_breakdown", {}),
+        "hygiene": dirty_quality.get("hygiene", {}),
     }
     clean_stage_breakdown = {
         "input_rows": clean_quality["input_rows"],
@@ -321,10 +345,15 @@ async def run_combo(
         "rejected_rows": clean_quality["rejected_rows"],
         "validate": clean_quality["stages"].get("validate"),
         "dedup": clean_quality["stages"].get("dedup"),
+        "defect_breakdown": clean_quality.get("defect_breakdown", {}),
+        "hygiene": clean_quality.get("hygiene", {}),
     }
     return {
         "dataset": dataset_name,
         "scale": scale,
+        "effective_train_rows": effective_train_rows,
+        "effective_test_rows": effective_test_rows,
+        "sampling": sampling,
         "defects": defects,
         "conditions": results,
         "dirty_optimized_minus_dirty_raw": dirty_recovery,
@@ -338,12 +367,12 @@ async def run_combo(
 def markdown_report(payload: dict[str, Any]) -> str:
     audited = any(combo.get("gemini_audit") for combo in payload["results"])
     header = (
-        "| Dataset | Scale | Dirty raw acc | Dirty optimized acc | Recovery | Clean raw acc | Clean optimized acc | Clean delta |"
+        "| Dataset | Requested | Train rows used | Dirty raw acc | Dirty optimized acc | Recovery | Clean raw acc | Clean optimized acc | Clean delta |"
         + (" Gemini audit (dirty-optimized) |" if audited else "")
     )
-    divider = "|---|---:|---:|---:|---:|---:|---:|---:|" + (":---|" if audited else "")
+    divider = "|---|---:|---:|---:|---:|---:|---:|---:|---:|" + (":---|" if audited else "")
     lines = [
-        "# BuffData 5-dataset x 3-scale accuracy-recovery matrix",
+        "# BuffData large-dataset accuracy-recovery matrix",
         "",
         f"Seeds: {payload['method']['seeds']} | Epochs: {payload['method']['epochs']} | "
         f"Test rows/dataset: {payload['method']['test_rows']}"
@@ -356,6 +385,7 @@ def markdown_report(payload: dict[str, Any]) -> str:
         c = combo["conditions"]
         row = (
             f"| {combo['dataset']} | {combo['scale']:,} | "
+            f"{combo.get('effective_train_rows', c['clean_raw']['rows']):,} | "
             f"{c['dirty_raw']['summary']['accuracy_mean']:.4f} | "
             f"{c['dirty_optimized']['summary']['accuracy_mean']:.4f} | "
             f"{combo['dirty_optimized_minus_dirty_raw']['accuracy']:+.4f} | "
@@ -380,7 +410,38 @@ def markdown_report(payload: dict[str, Any]) -> str:
         "audit, when enabled, is informational and does not decide which rows are kept). "
         "'Clean delta' is a control: it should stay near zero, showing BuffData does not damage "
         "already-clean data.",
+        "",
+        "## Data hygiene: how many rows were actually retained vs. lost",
+        "",
+        "Per-category cross-tab of the real pipeline decision for the `dirty_optimized` run of "
+        "each combo, taken from `item.metadata` after the run (not the injection ratios) -- "
+        "'Lost' is a row the pipeline actually rejected, split by the stage that caught it. "
+        "'Clean rows lost' isolates incidental duplicates the source dataset already had before "
+        "any defect was injected.",
+        "",
+        "| Dataset | Requested | Train rows used | Input | Retained | Deleted | Duplicate input rows | Invalid deleted | Duplicate deleted | Defects retained | Clean rows deleted |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
+    for combo in payload["results"]:
+        hygiene = combo["dirty_stage_breakdown"].get("hygiene", {})
+        breakdown = combo["dirty_stage_breakdown"].get("defect_breakdown", {})
+        totals = {"input": 0, "retained": 0, "lost": 0}
+        by_stage: dict[str, int] = {}
+        for entry in breakdown.values():
+            for key in ("input", "retained", "lost"):
+                totals[key] += entry[key]
+            for stage, count in entry["lost_by_stage"].items():
+                by_stage[stage] = by_stage.get(stage, 0) + count
+        clean_lost = breakdown.get(DEFECT_CLEAN, {}).get("lost", 0)
+        lines.append(
+            f"| {combo['dataset']} | {combo['scale']:,} | "
+            f"{combo.get('effective_train_rows', combo['conditions']['clean_raw']['rows']):,} | "
+            f"{totals['input']:,} | {totals['retained']:,} | "
+            f"{totals['lost']:,} | {hygiene.get('duplicate_rows_in_input', 0):,} | "
+            f"{hygiene.get('invalid_rows_deleted', by_stage.get('validate', 0)):,} | "
+            f"{hygiene.get('duplicate_rows_deleted', by_stage.get('dedup', 0)):,} | "
+            f"{hygiene.get('injected_defects_retained', 0):,} | {clean_lost:,} |"
+        )
     return "\n".join(lines)
 
 
@@ -389,19 +450,43 @@ async def main(args: argparse.Namespace) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     results_path = output_dir / "results.json"
     report_path = output_dir / "REPORT.md"
-
-    payload: dict[str, Any] = {
-        "method": {"seeds": args.seeds, "epochs": args.epochs, "test_rows": TEST_ROWS, "scales": SCALES},
-        "results": [],
-    }
-
-    skipped: list[dict[str, Any]] = []
+    skipped_path = output_dir / "skipped.json"
     selected = args.datasets or list(DATASETS)
+    requested_scales = args.scales or SCALES
+    selected_keys = {(name, scale) for name in selected for scale in requested_scales}
+
+    if args.append and results_path.exists():
+        payload = json.loads(results_path.read_text(encoding="utf-8"))
+        payload["method"].update(
+            {"seeds": args.seeds, "epochs": args.epochs, "test_rows": TEST_ROWS}
+        )
+        payload["method"]["scales"] = sorted(
+            set(payload["method"].get("scales", [])) | set(requested_scales)
+        )
+        skipped = json.loads(skipped_path.read_text(encoding="utf-8")) if skipped_path.exists() else []
+        skipped = [
+            entry for entry in skipped
+            if (entry["dataset"], entry["scale"]) not in selected_keys
+        ]
+    else:
+        payload = {
+            "method": {
+                "seeds": args.seeds,
+                "epochs": args.epochs,
+                "test_rows": TEST_ROWS,
+                "scales": requested_scales,
+            },
+            "results": [],
+        }
+        skipped = []
+        if skipped_path.exists():
+            skipped_path.unlink()
+
     for dataset_offset, name in enumerate(selected):
         spec = DATASETS[name]
         print(f"=== {name} ({spec['hf_id']}) ===", flush=True)
         train_split, test_split = load_normalized(spec)
-        for scale in (args.scales or SCALES):
+        for scale in requested_scales:
             started = time.perf_counter()
             try:
                 combo = await run_combo(
@@ -417,8 +502,13 @@ async def main(args: argparse.Namespace) -> None:
                 # hours of already-completed work over one dataset@scale that doesn't fit.
                 print(f"  [{name} @ {scale}] SKIPPED -- {exc}", flush=True)
                 skipped.append({"dataset": name, "scale": scale, "reason": str(exc)})
-                (output_dir / "skipped.json").write_text(json.dumps(skipped, indent=2), encoding="utf-8")
+                skipped_path.write_text(json.dumps(skipped, indent=2), encoding="utf-8")
                 continue
+            payload["results"] = [
+                existing
+                for existing in payload["results"]
+                if (existing["dataset"], existing["scale"]) != (name, scale)
+            ]
             payload["results"].append(combo)
             results_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
             report_path.write_text(markdown_report(payload), encoding="utf-8")
@@ -427,7 +517,10 @@ async def main(args: argparse.Namespace) -> None:
     print(f"Results: {results_path}")
     print(f"Report:  {report_path}")
     if skipped:
-        print(f"Skipped {len(skipped)} dataset@scale combination(s) that didn't fit -- see {output_dir / 'skipped.json'}")
+        skipped_path.write_text(json.dumps(skipped, indent=2), encoding="utf-8")
+        print(f"Skipped {len(skipped)} dataset@scale combination(s) that didn't fit -- see {skipped_path}")
+    elif skipped_path.exists():
+        skipped_path.unlink()
 
 
 if __name__ == "__main__":
@@ -442,4 +535,9 @@ if __name__ == "__main__":
         help="Sample-audit N rows of the dirty-optimized condition per combo with Gemini (needs GEMINI_API_KEY); 0 stays fully offline",
     )
     parser.add_argument("--gemini-model", default="gemini-3.5-flash-lite")
+    parser.add_argument(
+        "--append",
+        action="store_true",
+        help="Merge or replace selected dataset/scale combinations in an existing output directory.",
+    )
     asyncio.run(main(parser.parse_args()))

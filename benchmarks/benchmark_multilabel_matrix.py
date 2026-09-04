@@ -23,6 +23,7 @@ from typing import Any, Callable
 
 sys.path.insert(0, str(Path(__file__).parent))
 from benchmark_multilabel import (  # noqa: E402
+    DEFECT_CLEAN,
     build_vocab,
     make_dirty_multilabel,
     optimize_multilabel,
@@ -180,6 +181,8 @@ async def run_combo(
             "output_rows": dirty_quality["output_rows"],
             "validate": dirty_val_rej,
             "dedup": dirty_dedup_rej,
+            "defect_breakdown": dirty_quality.get("defect_breakdown", {}),
+            "hygiene": dirty_quality.get("hygiene", {}),
         },
     }
 
@@ -213,7 +216,36 @@ def markdown_report(payload: dict[str, Any]) -> str:
         "rows (10%). 'Dirty optimized' is BuffData's cleaned output from that exact "
         "contaminated input (validate + exact dedup only). 'Clean delta' is a control: it "
         "should stay near zero, showing BuffData does not damage already-clean data.",
+        "",
+        "## Data hygiene: how many rows were actually retained vs. lost",
+        "",
+        "Per-category cross-tab of the real pipeline decision for the `dirty_optimized` run of "
+        "each combo, taken from `item.metadata` after the run (not the injection ratios) -- "
+        "'Lost' is a row the pipeline actually rejected, split by the stage that caught it. "
+        "'Clean rows lost' isolates incidental duplicates the source dataset already had before "
+        "any defect was injected.",
+        "",
+        "| Dataset | Scale | Input | Retained | Deleted | Duplicate input rows | Invalid deleted | Duplicate deleted | Defects retained | Clean rows deleted |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
+    for combo in payload["results"]:
+        hygiene = combo["dirty_stage_breakdown"].get("hygiene", {})
+        breakdown = combo["dirty_stage_breakdown"].get("defect_breakdown", {})
+        totals = {"input": 0, "retained": 0, "lost": 0}
+        by_stage: dict[str, int] = {}
+        for entry in breakdown.values():
+            for key in ("input", "retained", "lost"):
+                totals[key] += entry[key]
+            for stage, count in entry["lost_by_stage"].items():
+                by_stage[stage] = by_stage.get(stage, 0) + count
+        clean_lost = breakdown.get(DEFECT_CLEAN, {}).get("lost", 0)
+        lines.append(
+            f"| {combo['dataset']} | {combo['scale']:,} | {totals['input']:,} | {totals['retained']:,} | "
+            f"{totals['lost']:,} | {hygiene.get('duplicate_rows_in_input', 0):,} | "
+            f"{hygiene.get('invalid_rows_deleted', by_stage.get('validate', 0)):,} | "
+            f"{hygiene.get('duplicate_rows_deleted', by_stage.get('dedup', 0)):,} | "
+            f"{hygiene.get('injected_defects_retained', 0):,} | {clean_lost:,} |"
+        )
     return "\n".join(lines)
 
 

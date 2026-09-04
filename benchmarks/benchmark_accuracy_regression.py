@@ -20,10 +20,13 @@ from buffdata.engine.client import LLMProvider
 from buffdata.engine.pipeline import OptimizationPipeline
 from buffdata.models.schemas import DatasetItem, PipelineConfig
 from benchmark_buffdata import (
+    DEFECT_CLEAN,
     build_vocab,
     make_dirty,
     stratified_rows,
     summarize,
+    summarize_data_hygiene,
+    summarize_defect_breakdown,
     train_once,
     write_jsonl,
 )
@@ -65,7 +68,13 @@ async def optimize(
         {"id": item.id, "text": item.get_classification_text(), "label": int(item.labels)}
         for item in result.accepted
     ]
-    return generated, result.metrics
+    metrics = dict(result.metrics)
+    # Real per-category, per-stage accept/reject cross-tab from the pipeline's own
+    # decisions (not the injection ratios) -- how many of each injected defect type
+    # were actually caught vs. slipped through, and which stage caught them.
+    metrics["defect_breakdown"] = summarize_defect_breakdown(result.accepted, result.rejected)
+    metrics["hygiene"] = summarize_data_hygiene(rows, result.accepted, result.rejected)
+    return generated, metrics
 
 
 def evaluate(
@@ -146,6 +155,40 @@ def report(payload: dict[str, Any]) -> str:
         "",
         f"Generated optimized data improves accuracy by **{gain['accuracy'] * 100:+.2f} points** "
         f"and macro-F1 by **{gain['macro_f1'] * 100:+.2f} points**.",
+        "",
+        "### Data hygiene: how many rows were actually retained vs. lost",
+        "",
+        "Cross-tabulated against the pipeline's real per-row decisions (`item.metadata` after the "
+        "run), not the injection ratios -- 'Lost' is a row BuffData actually rejected, broken down "
+        "by the exact stage that caught it.",
+        "",
+        "| Category | Injected | Retained | Lost | Lost via validate | Lost via dedup |",
+        "|---|---:|---:|---:|---:|---:|",
+    ])
+    breakdown = value.get("defect_breakdown", {})
+    category_label = {
+        DEFECT_CLEAN: "clean (uncontaminated source)",
+        "conflicting_duplicate": "conflicting-label duplicate",
+        "class_skew_duplicate": "class-skew duplicate",
+        "empty": "empty row",
+    }
+    totals = {"input": 0, "retained": 0, "lost": 0}
+    stage_totals: dict[str, int] = {}
+    for category, label in category_label.items():
+        entry = breakdown.get(category, {"input": 0, "retained": 0, "lost": 0, "lost_by_stage": {}})
+        for key in ("input", "retained", "lost"):
+            totals[key] += entry[key]
+        for stage, count in entry["lost_by_stage"].items():
+            stage_totals[stage] = stage_totals.get(stage, 0) + count
+        lines.append(
+            f"| {label} | {entry['input']:,} | {entry['retained']:,} | {entry['lost']:,} | "
+            f"{entry['lost_by_stage'].get('validate', 0):,} | {entry['lost_by_stage'].get('dedup', 0):,} |"
+        )
+    lines.append(
+        f"| **Total** | **{totals['input']:,}** | **{totals['retained']:,}** | **{totals['lost']:,}** | "
+        f"**{stage_totals.get('validate', 0):,}** | **{stage_totals.get('dedup', 0):,}** |"
+    )
+    lines.extend([
         "",
         "## Gates",
         "",
@@ -264,6 +307,7 @@ async def main(args: argparse.Namespace) -> None:
             "conditions": value_conditions,
             "generated_minus_original": value_gain,
             "defects": defects,
+            "defect_breakdown": generated_metrics.get("defect_breakdown", {}),
             "pipeline_metrics": generated_metrics,
         },
         "gates": {

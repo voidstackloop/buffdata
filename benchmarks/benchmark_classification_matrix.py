@@ -33,6 +33,7 @@ from typing import Any, Callable, Optional
 
 sys.path.insert(0, str(Path(__file__).parent))
 from benchmark_buffdata import (  # noqa: E402
+    DEFECT_CLEAN,
     build_vocab,
     make_dirty,
     stratified_rows,
@@ -310,8 +311,8 @@ async def measure_recovery(
     clean_test = stratified_rows(test_split, test_count, classes, ["text"], 200 + dataset_offset, "balanced")
     dirty_raw, optimizer_input, defects = make_dirty(clean_train, classes, 300 + dataset_offset)
 
-    clean_optimized, _ = await optimize(clean_train)
-    dirty_optimized, _ = await optimize(optimizer_input)
+    clean_optimized, clean_quality = await optimize(clean_train)
+    dirty_optimized, dirty_quality = await optimize(optimizer_input)
 
     conditions = {"clean_raw": clean_train, "clean_optimized": clean_optimized, "dirty_raw": dirty_raw, "dirty_optimized": dirty_optimized}
     vocab = build_vocab(clean_train)
@@ -330,6 +331,13 @@ async def measure_recovery(
         "conditions": results,
         "recovery_accuracy": results["dirty_optimized"]["summary"]["accuracy_mean"] - results["dirty_raw"]["summary"]["accuracy_mean"],
         "clean_delta_accuracy": results["clean_optimized"]["summary"]["accuracy_mean"] - results["clean_raw"]["summary"]["accuracy_mean"],
+        # Real per-category, per-stage accept/reject cross-tab from the pipeline's own
+        # decisions (not the injection ratios) -- how many of each injected defect type
+        # were actually caught vs. slipped through, and which stage caught them.
+        "dirty_defect_breakdown": dirty_quality.get("defect_breakdown", {}),
+        "clean_defect_breakdown": clean_quality.get("defect_breakdown", {}),
+        "dirty_hygiene": dirty_quality.get("hygiene", {}),
+        "clean_hygiene": clean_quality.get("hygiene", {}),
     }
 
 
@@ -439,6 +447,45 @@ def markdown_report(payload: dict[str, Any]) -> str:
             )
         lines.append("")
     lines.append("† capped below the requested scale by the smallest class's available rows.")
+
+    lines += [
+        "",
+        "## Data hygiene: how many rows were actually retained vs. lost",
+        "",
+        "Per-category cross-tab of the real pipeline decision for the `dirty_optimized` run at "
+        "each scale, taken from `item.metadata` after the run (not the injection ratios) -- "
+        "'Lost' is a row the pipeline actually rejected, split by the stage that caught it. "
+        "'Clean rows lost' isolates incidental duplicates the source dataset already had before "
+        "any defect was injected.",
+        "",
+    ]
+    for scale in payload["method"]["scales"]:
+        lines.append(f"### Scale {scale}")
+        lines.append("")
+        lines.append("| Dataset | Input | Retained | Deleted | Duplicate input rows | Invalid deleted | Duplicate deleted | Defects retained | Clean rows deleted |")
+        lines.append("|---|---:|---:|---:|---:|---:|---:|---:|---:|")
+        for r in payload["results"]:
+            rec = r["recovery_by_scale"].get(str(scale))
+            if rec is None:
+                continue
+            hygiene = rec.get("dirty_hygiene", {})
+            breakdown = rec.get("dirty_defect_breakdown", {})
+            totals = {"input": 0, "retained": 0, "lost": 0}
+            by_stage: dict[str, int] = {}
+            for entry in breakdown.values():
+                for key in ("input", "retained", "lost"):
+                    totals[key] += entry[key]
+                for stage, count in entry["lost_by_stage"].items():
+                    by_stage[stage] = by_stage.get(stage, 0) + count
+            clean_lost = breakdown.get(DEFECT_CLEAN, {}).get("lost", 0)
+            lines.append(
+                f"| {r['dataset']} | {totals['input']:,} | {totals['retained']:,} | {totals['lost']:,} | "
+                f"{hygiene.get('duplicate_rows_in_input', 0):,} | "
+                f"{hygiene.get('invalid_rows_deleted', by_stage.get('validate', 0)):,} | "
+                f"{hygiene.get('duplicate_rows_deleted', by_stage.get('dedup', 0)):,} | "
+                f"{hygiene.get('injected_defects_retained', 0):,} | {clean_lost:,} |"
+            )
+        lines.append("")
     return "\n".join(lines)
 
 
