@@ -162,6 +162,8 @@ TOKEN_RE = re.compile(r"[A-Za-z0-9_']+")
 PRICING = {
     "gemini-3.7-flash": {"input": 0.075, "output": 0.30},
     "claude-sonnet-5": {"input": 3.00, "output": 15.00},
+    "gpt-5.6-sol": {"input": 4.00, "output": 20.00},
+    "gpt-5.6": {"input": 4.00, "output": 20.00},
     "default": {"input": 1.00, "output": 5.00},
 }
 

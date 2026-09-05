@@ -581,6 +581,19 @@ class GeminiClient(_ClientBase):
         return await asyncio.to_thread(self.embed_texts, texts=texts, model=model)
 
 
+def _supports_temperature(model: str) -> bool:
+    """False for OpenAI reasoning models (gpt-5.x / gpt-6.x / o-series), which
+    reject the temperature parameter outright (400 unsupported-parameter) and
+    run at their own fixed sampling. Callers keep passing temperature as
+    before; OpenAIClient simply omits it for these models instead of failing.
+    Reasoning effort itself is left at the API default (medium)."""
+    name = (model or "").lower()
+    return not (
+        name.startswith(("gpt-5", "gpt-6", "o1", "o3", "o4"))
+        or "reasoning" in name
+    )
+
+
 class OpenAIClient(_ClientBase):
     """OpenAI Responses API adapter using Pydantic structured outputs."""
 
@@ -627,12 +640,14 @@ class OpenAIClient(_ClientBase):
     ) -> T:
         if self._mock_mode:
             return self._mock_structured(response_schema)
-        response = self.client.responses.parse(
-            model=model or self.default_model,
-            input=self._input(prompt, system_instruction),
-            text_format=response_schema,
-            temperature=temperature,
-        )
+        kwargs: dict[str, Any] = {
+            "model": model or self.default_model,
+            "input": self._input(prompt, system_instruction),
+            "text_format": response_schema,
+        }
+        if _supports_temperature(kwargs["model"]):
+            kwargs["temperature"] = temperature
+        response = self.client.responses.parse(**kwargs)
         self._record_usage(getattr(response, "usage", None))
         parsed = getattr(response, "output_parsed", None)
         if parsed is None:
@@ -648,11 +663,13 @@ class OpenAIClient(_ClientBase):
     ) -> str:
         if self._mock_mode:
             return f"[Simulated OpenAI response to: {prompt[:40]}...]"
-        response = self.client.responses.create(
-            model=model or self.default_model,
-            input=self._input(prompt, system_instruction),
-            temperature=temperature,
-        )
+        kwargs: dict[str, Any] = {
+            "model": model or self.default_model,
+            "input": self._input(prompt, system_instruction),
+        }
+        if _supports_temperature(kwargs["model"]):
+            kwargs["temperature"] = temperature
+        response = self.client.responses.create(**kwargs)
         self._record_usage(getattr(response, "usage", None))
         return response.output_text
 
