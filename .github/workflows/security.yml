@@ -11,6 +11,10 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install torch --index-url https://download.pytorch.org/whl/cpu
+      # The CPU index supplies old setuptools wheels; refresh build tooling from
+      # PyPI before auditing (83.0.0 fixes CVE-2026-59890 and CVE-2025-47273).
+      - name: Install patched build tooling
+        run: python -m pip install --upgrade --index-url https://pypi.org/simple 'pip>=26.2' 'setuptools>=83.0.0'
       - run: pip install '.[server,dev]' pip-audit keyrings.alt
       - run: pytest -q tests/test_run_management.py tests/test_security_boundaries.py tests/test_team_server.py tests/test_adaptive_pipeline.py tests/test_accuracy_gate.py
       - run: pip-audit
