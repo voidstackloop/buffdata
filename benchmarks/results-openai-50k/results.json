@@ -1,0 +1,434 @@
+{
+  "method": {
+    "provider": "openai",
+    "model": "gpt-5.6-sol",
+    "base_url": null,
+    "seeds": [
+      17,
+      29
+    ],
+    "epochs": 2,
+    "audit_rows": 0,
+    "classify_sample_size": 20
+  },
+  "results": [
+    {
+      "dataset": "ag_news",
+      "hf_id": "fancyzhx/ag_news",
+      "description": "AG News topic classification",
+      "num_classes": 4,
+      "class_names": [
+        "World",
+        "Sports",
+        "Business",
+        "Sci/Tech"
+      ],
+      "defects": {
+        "clean_rows": 50000,
+        "conflicting_duplicate_rows": 20000,
+        "class_skew_duplicate_rows": 20000,
+        "empty_rows": 5000,
+        "total_dirty_rows": 95000
+      },
+      "conditions": {
+        "clean_raw": {
+          "rows": 50000,
+          "runs": [
+            {
+              "accuracy": 0.901,
+              "macro_f1": 0.9011475275795174,
+              "train_seconds": 5.576456073002191
+            },
+            {
+              "accuracy": 0.90475,
+              "macro_f1": 0.9048619741771069,
+              "train_seconds": 6.493974288001482
+            }
+          ],
+          "summary": {
+            "accuracy_mean": 0.9028750000000001,
+            "accuracy_std": 0.002651650429449575,
+            "accuracy_min": 0.901,
+            "accuracy_max": 0.90475,
+            "macro_f1_mean": 0.9030047508783121,
+            "macro_f1_std": 0.0026265103775108063,
+            "macro_f1_min": 0.9011475275795174,
+            "macro_f1_max": 0.9048619741771069,
+            "train_seconds_mean": 6.035215180501837,
+            "train_seconds_std": 0.648783351688175,
+            "train_seconds_min": 5.576456073002191,
+            "train_seconds_max": 6.493974288001482
+          }
+        },
+        "clean_optimized": {
+          "rows": 49998,
+          "runs": [
+            {
+              "accuracy": 0.9015,
+              "macro_f1": 0.9012862429759281,
+              "train_seconds": 6.666863512000418
+            },
+            {
+              "accuracy": 0.9025,
+              "macro_f1": 0.9024025302738048,
+              "train_seconds": 6.830553390002024
+            }
+          ],
+          "summary": {
+            "accuracy_mean": 0.9019999999999999,
+            "accuracy_std": 0.0007071067811865482,
+            "accuracy_min": 0.9015,
+            "accuracy_max": 0.9025,
+            "macro_f1_mean": 0.9018443866248664,
+            "macro_f1_std": 0.000789334318081034,
+            "macro_f1_min": 0.9012862429759281,
+            "macro_f1_max": 0.9024025302738048,
+            "train_seconds_mean": 6.748708451001221,
+            "train_seconds_std": 0.11574622274653384,
+            "train_seconds_min": 6.666863512000418,
+            "train_seconds_max": 6.830553390002024
+          }
+        },
+        "dirty_optimized": {
+          "rows": 49999,
+          "runs": [
+            {
+              "accuracy": 0.90075,
+              "macro_f1": 0.9008832645571877,
+              "train_seconds": 7.300068763997842
+            },
+            {
+              "accuracy": 0.91025,
+              "macro_f1": 0.9100542334147662,
+              "train_seconds": 8.864087286998256
+            }
+          ],
+          "summary": {
+            "accuracy_mean": 0.9055,
+            "accuracy_std": 0.006717514421272168,
+            "accuracy_min": 0.90075,
+            "accuracy_max": 0.91025,
+            "macro_f1_mean": 0.905468748985977,
+            "macro_f1_std": 0.006484854269244409,
+            "macro_f1_min": 0.9008832645571877,
+            "macro_f1_max": 0.9100542334147662,
+            "train_seconds_mean": 8.082078025498049,
+            "train_seconds_std": 1.1059281035149606,
+            "train_seconds_min": 7.300068763997842,
+            "train_seconds_max": 8.864087286998256
+          }
+        },
+        "dirty_raw": {
+          "rows": 95000,
+          "runs": [
+            {
+              "accuracy": 0.8775,
+              "macro_f1": 0.8782989565262372,
+              "train_seconds": 18.010423706000438
+            },
+            {
+              "accuracy": 0.8775,
+              "macro_f1": 0.8776560797033149,
+              "train_seconds": 15.995990559000347
+            }
+          ],
+          "summary": {
+            "accuracy_mean": 0.8775,
+            "accuracy_std": 0.0,
+            "accuracy_min": 0.8775,
+            "accuracy_max": 0.8775,
+            "macro_f1_mean": 0.8779775181147761,
+            "macro_f1_std": 0.00045458256095602185,
+            "macro_f1_min": 0.8776560797033149,
+            "macro_f1_max": 0.8782989565262372,
+            "train_seconds_mean": 17.003207132500393,
+            "train_seconds_std": 1.4244193384907216,
+            "train_seconds_min": 15.995990559000347,
+            "train_seconds_max": 18.010423706000438
+          }
+        }
+      },
+      "recovery_accuracy": 0.028000000000000025,
+      "clean_delta_accuracy": -0.0008750000000001812,
+      "dirty_audit_quality": {
+        "input_rows": 95000,
+        "output_rows": 49999,
+        "rejected_rows": 45001,
+        "elapsed_seconds": 0.3859956480009714,
+        "throughput_rows_per_sec": 246116.76450756492,
+        "profile": {
+          "format": "raw",
+          "row_count": 95000,
+          "text_fields": [
+            "text"
+          ],
+          "existing_label_field": "label",
+          "classification_applicable": true,
+          "task_type": "multi-class",
+          "classes": [
+            "0",
+            "1",
+            "2",
+            "3"
+          ],
+          "confidence": 1.0,
+          "reasoning": "Derived the classification task from existing labels.",
+          "sampled_ids": [
+            "1e5888c9",
+            "c9046e67",
+            "db0a164f",
+            "e91159bd",
+            "1a76097e",
+            "1cc082d5",
+            "c71fb017",
+            "7c4f53b9",
+            "76ce51f4",
+            "34296160",
+            "67b428df",
+            "c842430c",
+            "da51104c",
+            "738d4abf",
+            "62155819",
+            "47f8aaf0",
+            "b2400a93",
+            "516791f1",
+            "c43b7f1c",
+            "56ce613b",
+            "967d0b1d",
+            "ef311f16",
+            "da098626",
+            "caccf90f",
+            "80f92473",
+            "f9f73d2d",
+            "215040ab",
+            "df6e7448",
+            "356d16b6",
+            "db03ebf8",
+            "a163a40b",
+            "683f7839",
+            "34232548",
+            "8cb5ec27",
+            "a1ecc0a8",
+            "e3ac0699",
+            "8bbb3835",
+            "db7560a1",
+            "2d1f4130",
+            "91789f81",
+            "a739c629",
+            "f8cb3bab",
+            "726323af",
+            "3a294e52",
+            "2b256858",
+            "2d9efd6b",
+            "6d506e2d",
+            "4e035418",
+            "20282a81",
+            "0147e718",
+            "7ac6cee8",
+            "1416c2ce",
+            "ceb55429",
+            "aa435fe0",
+            "d8c94eb9",
+            "0d1fd0fb",
+            "fde3c73b",
+            "631132ad",
+            "10c64ca1",
+            "693f9c84",
+            "c711aa73",
+            "c449cd16",
+            "190f233d",
+            "8ec2c01b",
+            "f3dd0e12",
+            "f2dd805a",
+            "e4870f68",
+            "e5b7f4f7",
+            "1f927b5a",
+            "4939c389",
+            "a3dee988",
+            "ae8db8df",
+            "10bbd509",
+            "d392c51d",
+            "0669fed7",
+            "70c424ca",
+            "32900848",
+            "b57b528f",
+            "055b97ed",
+            "6c18f31a",
+            "0bc5c9f5",
+            "44ec607c",
+            "51ee50e2",
+            "a40c44df",
+            "012d615b",
+            "e0579a0d",
+            "f3bd3ded",
+            "5f4ee9e3",
+            "a9dadea9",
+            "2d72689d",
+            "94f47004",
+            "af69648f",
+            "6b73fce3",
+            "aaaaf6ca",
+            "4c13be52",
+            "cc9b744d",
+            "5dfc5500",
+            "5b86c839",
+            "e5d8a5fd",
+            "35923d09"
+          ]
+        },
+        "stages": {
+          "validate": {
+            "accepted": 95000,
+            "rejected": 0
+          },
+          "pii": {
+            "enabled": false,
+            "policy": "identifiers",
+            "redacted_records": 0
+          },
+          "profile": {
+            "classification_applicable": true,
+            "confidence": 1.0,
+            "task_type": "multi-class"
+          },
+          "dedup": {
+            "method": "exact",
+            "rejected": 45001
+          },
+          "score_refine": {
+            "mode": "off",
+            "requested_mode": "off",
+            "scored": 0,
+            "refined": 0
+          },
+          "filter": {
+            "action": "skipped",
+            "reason": "quality_mode=off does not produce per-row scores",
+            "accepted": 49999,
+            "rejected": 0
+          },
+          "classify": {
+            "action": "existing_labels",
+            "task_type": null,
+            "classes": [
+              "0",
+              "1",
+              "2",
+              "3"
+            ],
+            "confidence": 1.0
+          }
+        },
+        "provider": "openai",
+        "model": "gpt-5.6-sol",
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0
+        },
+        "estimated_cost_usd": 0.0,
+        "audit_scored_rows": 0,
+        "audit_failed_rows": 0,
+        "audit_avg_score": null,
+        "audit_min_score": null,
+        "audit_remote_batches": 0,
+        "defect_breakdown": {
+          "clean": {
+            "input": 50000,
+            "retained": 49998,
+            "lost": 2,
+            "lost_by_stage": {
+              "dedup": 2
+            }
+          },
+          "empty": {
+            "input": 5000,
+            "retained": 1,
+            "lost": 4999,
+            "lost_by_stage": {
+              "dedup": 4999
+            }
+          },
+          "conflicting_duplicate": {
+            "input": 20000,
+            "retained": 0,
+            "lost": 20000,
+            "lost_by_stage": {
+              "dedup": 20000
+            }
+          },
+          "class_skew_duplicate": {
+            "input": 20000,
+            "retained": 0,
+            "lost": 20000,
+            "lost_by_stage": {
+              "dedup": 20000
+            }
+          }
+        },
+        "hygiene": {
+          "input_rows": 95000,
+          "retained_rows": 49999,
+          "deleted_rows": 45001,
+          "deletion_rate": 0.4736947368421053,
+          "unique_content_rows": 49999,
+          "duplicate_groups_in_input": 25927,
+          "duplicate_rows_in_input": 45001,
+          "conflicting_label_groups_in_input": 19999,
+          "conflicting_label_rows_in_input": 23772,
+          "empty_text_rows_in_input": 5000,
+          "duplicate_rows_deleted": 45001,
+          "invalid_rows_deleted": 0,
+          "other_rows_deleted": 0,
+          "deleted_by_stage": {
+            "dedup": 45001
+          },
+          "deleted_by_reason": {
+            "exact_duplicate": 45001
+          },
+          "injected_defect_rows": 45000,
+          "injected_defects_removed": 44999,
+          "injected_defects_retained": 1,
+          "defect_removal_rate": 0.9999777777777777,
+          "clean_rows_deleted": 2,
+          "clean_rows_retained": 49998,
+          "defect_breakdown": {
+            "clean": {
+              "input": 50000,
+              "retained": 49998,
+              "lost": 2,
+              "lost_by_stage": {
+                "dedup": 2
+              }
+            },
+            "empty": {
+              "input": 5000,
+              "retained": 1,
+              "lost": 4999,
+              "lost_by_stage": {
+                "dedup": 4999
+              }
+            },
+            "conflicting_duplicate": {
+              "input": 20000,
+              "retained": 0,
+              "lost": 20000,
+              "lost_by_stage": {
+                "dedup": 20000
+              }
+            },
+            "class_skew_duplicate": {
+              "input": 20000,
+              "retained": 0,
+              "lost": 20000,
+              "lost_by_stage": {
+                "dedup": 20000
+              }
+            }
+          }
+        }
+      },
+      "classification": null
+    }
+  ]
+}

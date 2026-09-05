@@ -1,0 +1,449 @@
+{
+  "method": {
+    "provider": "gemini",
+    "model": "gemini-3.7-flash",
+    "base_url": null,
+    "seeds": [
+      17,
+      29
+    ],
+    "epochs": 2,
+    "audit_rows": 20,
+    "classify_sample_size": 20
+  },
+  "results": [
+    {
+      "dataset": "amazon_polarity",
+      "hf_id": "fancyzhx/amazon_polarity",
+      "description": "Amazon product reviews sentiment",
+      "num_classes": 2,
+      "class_names": [
+        "negative",
+        "positive"
+      ],
+      "defects": {
+        "clean_rows": 1000000,
+        "conflicting_duplicate_rows": 400000,
+        "class_skew_duplicate_rows": 400000,
+        "empty_rows": 100000,
+        "total_dirty_rows": 1900000
+      },
+      "conditions": {
+        "clean_raw": {
+          "rows": 1000000,
+          "runs": [
+            {
+              "accuracy": 0.9055714285714286,
+              "macro_f1": 0.9055600013315896,
+              "train_seconds": 130.77513698199982
+            },
+            {
+              "accuracy": 0.903,
+              "macro_f1": 0.9029499281047433,
+              "train_seconds": 140.62215922099858
+            }
+          ],
+          "summary": {
+            "accuracy_mean": 0.9042857142857144,
+            "accuracy_std": 0.0018182745801939698,
+            "accuracy_min": 0.903,
+            "accuracy_max": 0.9055714285714286,
+            "macro_f1_mean": 0.9042549647181665,
+            "macro_f1_std": 0.001845600478096519,
+            "macro_f1_min": 0.9029499281047433,
+            "macro_f1_max": 0.9055600013315896,
+            "train_seconds_mean": 135.6986481014992,
+            "train_seconds_std": 6.962896199690764,
+            "train_seconds_min": 130.77513698199982,
+            "train_seconds_max": 140.62215922099858
+          }
+        },
+        "clean_optimized": {
+          "rows": 1000000,
+          "runs": [
+            {
+              "accuracy": 0.9055714285714286,
+              "macro_f1": 0.9055600013315896,
+              "train_seconds": 137.52327919099844
+            },
+            {
+              "accuracy": 0.903,
+              "macro_f1": 0.9029499281047433,
+              "train_seconds": 135.613346670998
+            }
+          ],
+          "summary": {
+            "accuracy_mean": 0.9042857142857144,
+            "accuracy_std": 0.0018182745801939698,
+            "accuracy_min": 0.903,
+            "accuracy_max": 0.9055714285714286,
+            "macro_f1_mean": 0.9042549647181665,
+            "macro_f1_std": 0.001845600478096519,
+            "macro_f1_min": 0.9029499281047433,
+            "macro_f1_max": 0.9055600013315896,
+            "train_seconds_mean": 136.56831293099822,
+            "train_seconds_std": 1.3505262365010215,
+            "train_seconds_min": 135.613346670998,
+            "train_seconds_max": 137.52327919099844
+          }
+        },
+        "dirty_optimized": {
+          "rows": 1000001,
+          "runs": [
+            {
+              "accuracy": 0.9064285714285715,
+              "macro_f1": 0.906405037070648,
+              "train_seconds": 128.71268672400038
+            },
+            {
+              "accuracy": 0.9075714285714286,
+              "macro_f1": 0.9075629602067015,
+              "train_seconds": 209.01792390099945
+            }
+          ],
+          "summary": {
+            "accuracy_mean": 0.907,
+            "accuracy_std": 0.0008081220356417469,
+            "accuracy_min": 0.9064285714285715,
+            "accuracy_max": 0.9075714285714286,
+            "macro_f1_mean": 0.9069839986386747,
+            "macro_f1_std": 0.0008187753015961888,
+            "macro_f1_min": 0.906405037070648,
+            "macro_f1_max": 0.9075629602067015,
+            "train_seconds_mean": 168.8653053124999,
+            "train_seconds_std": 56.78437777265008,
+            "train_seconds_min": 128.71268672400038,
+            "train_seconds_max": 209.01792390099945
+          }
+        },
+        "dirty_raw": {
+          "rows": 1900000,
+          "runs": [
+            {
+              "accuracy": 0.8272857142857143,
+              "macro_f1": 0.823333397559287,
+              "train_seconds": 240.89160398100285
+            },
+            {
+              "accuracy": 0.8565714285714285,
+              "macro_f1": 0.8549058064516128,
+              "train_seconds": 485.83857675000036
+            }
+          ],
+          "summary": {
+            "accuracy_mean": 0.8419285714285714,
+            "accuracy_std": 0.020708127163320295,
+            "accuracy_min": 0.8272857142857143,
+            "accuracy_max": 0.8565714285714285,
+            "macro_f1_mean": 0.8391196020054499,
+            "macro_f1_std": 0.02232506442615804,
+            "macro_f1_min": 0.823333397559287,
+            "macro_f1_max": 0.8549058064516128,
+            "train_seconds_mean": 363.3650903655016,
+            "train_seconds_std": 173.20366547607475,
+            "train_seconds_min": 240.89160398100285,
+            "train_seconds_max": 485.83857675000036
+          }
+        }
+      },
+      "recovery_accuracy": 0.06507142857142867,
+      "clean_delta_accuracy": 0.0,
+      "dirty_audit_quality": {
+        "input_rows": 1900000,
+        "output_rows": 1000001,
+        "rejected_rows": 899999,
+        "elapsed_seconds": 33.185293088001345,
+        "throughput_rows_per_sec": 57254.27812138186,
+        "profile": {
+          "format": "raw",
+          "row_count": 1900000,
+          "text_fields": [
+            "text"
+          ],
+          "existing_label_field": "label",
+          "classification_applicable": true,
+          "task_type": "binary",
+          "classes": [
+            "0",
+            "1"
+          ],
+          "confidence": 1.0,
+          "reasoning": "Derived the classification task from existing labels.",
+          "sampled_ids": [
+            "7fd495ef",
+            "f49d5646",
+            "0db40ca7",
+            "9ff0c9f7",
+            "d964e486",
+            "d5248d2d",
+            "b3539020",
+            "6d26d7b4",
+            "b071b90c",
+            "53523099",
+            "81d1d920",
+            "1a3a29d5",
+            "d709d8e1",
+            "48df69e2",
+            "ff148e39",
+            "1c5c6912",
+            "26b73beb",
+            "c5bdca80",
+            "df4ad58c",
+            "529eb822",
+            "c9f93ed6",
+            "a9cbab4f",
+            "2c237b56",
+            "a2d03761",
+            "3340a18e",
+            "6596e124",
+            "c426a3b2",
+            "7c42626e",
+            "a51ea77e",
+            "4f6d041b",
+            "bd9772ed",
+            "8b1cfa3f",
+            "90338dc9",
+            "a6c4a4c6",
+            "34f6121f",
+            "a2c91517",
+            "d91d1a0b",
+            "5fcf55da",
+            "6bfdf091",
+            "493f624e",
+            "55341212",
+            "8f4b2306",
+            "1d73adec",
+            "166d793e",
+            "c37e8e84",
+            "4b1c76a7",
+            "c2466b88",
+            "e99980f6",
+            "d3edc3cb",
+            "ee70a230",
+            "022f54e5",
+            "98544c99",
+            "4cb4a432",
+            "ca6dc8de",
+            "dc77ca83",
+            "7f74e1a1",
+            "70041f63",
+            "185fcab0",
+            "654a38a8",
+            "fbd9c609",
+            "5d9d3b83",
+            "dee0efc5",
+            "985ce05d",
+            "d2ffc149",
+            "7fe72897",
+            "ae325dbd",
+            "8f9e4c1c",
+            "07476f8f",
+            "7a3794fd",
+            "366bd890",
+            "16c0f3f2",
+            "dd569713",
+            "47fcf505",
+            "57a35f8e",
+            "6891ee3d",
+            "f98a3a73",
+            "fea33ab6",
+            "a25c9c0c",
+            "7bddeda9",
+            "3dbfde66",
+            "4d3c31d2",
+            "a9851ecb",
+            "dd86c870",
+            "a2336207",
+            "c510c54a",
+            "f806c170",
+            "16a03c07",
+            "c2b54fcc",
+            "9762048d",
+            "a966be26",
+            "62b3ba98",
+            "5b7b22d9",
+            "1f5b2ca2",
+            "92ada9a1",
+            "8a07063a",
+            "cc12c027",
+            "46f09c73",
+            "5676c425",
+            "e21125d9",
+            "8f7f7824"
+          ]
+        },
+        "stages": {
+          "validate": {
+            "accepted": 1900000,
+            "rejected": 0
+          },
+          "pii": {
+            "enabled": false,
+            "policy": "identifiers",
+            "redacted_records": 0
+          },
+          "profile": {
+            "classification_applicable": true,
+            "confidence": 1.0,
+            "task_type": "binary"
+          },
+          "dedup": {
+            "method": "exact",
+            "rejected": 899999
+          },
+          "score_refine": {
+            "mode": "sampled",
+            "sample_requested": 20,
+            "scored": 20,
+            "failed": 0,
+            "remote_batches": 2,
+            "remote_records": 19,
+            "average_overall_score": 8.98,
+            "minimum_overall_score": 2.0,
+            "refined": 0
+          },
+          "filter": {
+            "action": "skipped",
+            "reason": "quality_mode=sampled does not produce per-row scores",
+            "accepted": 1000001,
+            "rejected": 0
+          },
+          "classify": {
+            "action": "existing_labels",
+            "task_type": null,
+            "classes": [
+              "0",
+              "1"
+            ],
+            "confidence": 1.0
+          }
+        },
+        "provider": "gemini",
+        "model": "gemini-3.7-flash",
+        "usage": {
+          "input_tokens": 4183,
+          "output_tokens": 2293,
+          "total_tokens": 7596
+        },
+        "estimated_cost_usd": 0.001001625,
+        "audit_scored_rows": 20,
+        "audit_failed_rows": 0,
+        "audit_avg_score": 8.98,
+        "audit_min_score": 2.0,
+        "audit_remote_batches": 2,
+        "defect_breakdown": {
+          "clean": {
+            "input": 1000000,
+            "retained": 1000000,
+            "lost": 0,
+            "lost_by_stage": {}
+          },
+          "empty": {
+            "input": 100000,
+            "retained": 1,
+            "lost": 99999,
+            "lost_by_stage": {
+              "dedup": 99999
+            }
+          },
+          "conflicting_duplicate": {
+            "input": 400000,
+            "retained": 0,
+            "lost": 400000,
+            "lost_by_stage": {
+              "dedup": 400000
+            }
+          },
+          "class_skew_duplicate": {
+            "input": 400000,
+            "retained": 0,
+            "lost": 400000,
+            "lost_by_stage": {
+              "dedup": 400000
+            }
+          }
+        },
+        "hygiene": {
+          "input_rows": 1900000,
+          "retained_rows": 1000001,
+          "deleted_rows": 899999,
+          "deletion_rate": 0.4736836842105263,
+          "unique_content_rows": 1000001,
+          "duplicate_groups_in_input": 565566,
+          "duplicate_rows_in_input": 899999,
+          "conflicting_label_groups_in_input": 400001,
+          "conflicting_label_rows_in_input": 449952,
+          "empty_text_rows_in_input": 100000,
+          "duplicate_rows_deleted": 899999,
+          "invalid_rows_deleted": 0,
+          "other_rows_deleted": 0,
+          "deleted_by_stage": {
+            "dedup": 899999
+          },
+          "deleted_by_reason": {
+            "exact_duplicate": 899999
+          },
+          "injected_defect_rows": 900000,
+          "injected_defects_removed": 899999,
+          "injected_defects_retained": 1,
+          "defect_removal_rate": 0.9999988888888889,
+          "clean_rows_deleted": 0,
+          "clean_rows_retained": 1000000,
+          "defect_breakdown": {
+            "clean": {
+              "input": 1000000,
+              "retained": 1000000,
+              "lost": 0,
+              "lost_by_stage": {}
+            },
+            "empty": {
+              "input": 100000,
+              "retained": 1,
+              "lost": 99999,
+              "lost_by_stage": {
+                "dedup": 99999
+              }
+            },
+            "conflicting_duplicate": {
+              "input": 400000,
+              "retained": 0,
+              "lost": 400000,
+              "lost_by_stage": {
+                "dedup": 400000
+              }
+            },
+            "class_skew_duplicate": {
+              "input": 400000,
+              "retained": 0,
+              "lost": 400000,
+              "lost_by_stage": {
+                "dedup": 400000
+              }
+            }
+          }
+        }
+      },
+      "classification": {
+        "provider": "gemini",
+        "model": "gemini-3.7-flash",
+        "mode": "binary",
+        "mock": false,
+        "classes": [
+          "negative",
+          "positive"
+        ],
+        "sampled": 20,
+        "scored": 20,
+        "failed": 0,
+        "correct": 20,
+        "accuracy": 1.0,
+        "elapsed_seconds": 3.3,
+        "usage": {
+          "input_tokens": 2457,
+          "output_tokens": 854,
+          "total_tokens": 3637
+        }
+      }
+    }
+  ]
+}
